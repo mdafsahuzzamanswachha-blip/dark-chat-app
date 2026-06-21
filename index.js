@@ -41,7 +41,12 @@ io.on('connection', (socket) => {
         // Forwards the call acceptance back to the caller
         socket.broadcast.emit('call_accepted', data.signal);
     });
-
+    
+    socket.on('hangup', () => {
+        // Forwards the hangup signal to the other person
+        socket.broadcast.emit('call_ended');
+    });
+    
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
     });
