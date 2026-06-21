@@ -28,6 +28,11 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('receive_message', data);
     });
 
+    // 🌟 ADDED: Listen for typing events and broadcast them to the other user
+    socket.on('typing', (isTyping) => {
+        socket.broadcast.emit('user_typing', isTyping);
+    });
+
     // WebRTC Signaling Events for Audio/Video Calling
     socket.on('call_user', (data) => {
         // FIXED: Forwards the call offer AND the isVideo choice to the other user
