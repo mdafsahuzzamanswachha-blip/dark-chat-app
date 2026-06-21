@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark Video Chat</title>
+    <title>Dark Video & Audio Chat</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
         .container { width: 350px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
@@ -13,15 +13,18 @@
         .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         video { width: 100%; height: 120px; background: #000; border-radius: 8px; object-fit: cover; border: 1px solid #333; }
         
-        #chat-box { height: 250px; border: 1px solid #333; background: #181818; padding: 10px; overflow-y: auto; margin-bottom: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+        #chat-box { height: 220px; border: 1px solid #333; background: #181818; padding: 10px; overflow-y: auto; margin-bottom: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
         .msg { max-width: 75%; padding: 8px 12px; border-radius: 15px; font-size: 14px; word-wrap: break-word; }
         .msg.left { background: #2d2d2d; align-self: flex-start; color: #fff; }
         .msg.right { background: #3700b3; align-self: flex-end; color: #fff; }
         .input-area { display: flex; gap: 8px; margin-bottom: 15px; }
         input { flex: 1; padding: 10px; border: 1px solid #333; border-radius: 6px; background: #252525; color: white; outline: none; }
-        button { padding: 10px 16px; border: none; border-radius: 6px; background: #03dac6; color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button { padding: 10px 14px; border: none; border-radius: 6px; background: #03dac6; color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; }
         button:hover { opacity: 0.9; }
-        .call-controls { display: flex; justify-content: space-around; gap: 8px; border-top: 1px solid #333; padding-top: 15px; }
+        
+        .call-controls { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #333; padding-top: 15px; }
+        .action-btns { display: flex; gap: 8px; }
+        .action-btns button { flex: 1; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
@@ -50,8 +53,11 @@
     </div>
 
     <div class="call-controls">
-        <button id="callBtn" onclick="startCall()" style="background: #bb86fc; color: black; width: 100%;">📹 Start Video Call</button>
-        <button id="answerBtn" onclick="answerCall()" style="display:none; background: #03dac6; width: 100%;">🟢 Answer Video Call</button>
+        <div id="outgoingBtns" class="action-btns">
+            <button id="audioCallBtn" onclick="startCall(false)" style="background: #03dac6; color: black;">📞 Voice Call</button>
+            <button id="videoCallBtn" onclick="startCall(true)" style="background: #bb86fc; color: black;">📹 Video Call</button>
+        </div>
+        <button id="answerBtn" onclick="answerCall()" style="display:none; background: #cf6679; color: white; width: 100%;">🟢 Incoming Call (Click to Answer)</button>
     </div>
 </div>
 
@@ -65,6 +71,7 @@
     let localStream;
     let peer;
     let incomingSignal;
+    let isVideoCall = false;
 
     // --- TEXT MESSAGE LOGIC ---
     socket.on('receive_message', (message) => {
@@ -94,43 +101,53 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- WEBRTC VIDEO CALLING LOGIC ---
-    async function getMedia() {
+    // --- WEBRTC CALLING LOGIC ---
+    async function getMedia(wantVideo) {
         if (!localStream) {
-            // CHANGED HERE: Changed audio: true, video: true to fetch your camera stream!
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-            document.getElementById('localVideo').srcObject = localStream;
+            // Dynamically requests camera access ONLY if wantVideo is true
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo });
+            if (wantVideo) {
+                document.getElementById('localVideo').srcObject = localStream;
+            }
         }
         return localStream;
     }
 
-    // Initiate Call
-    async function startCall() {
-        document.getElementById('callBtn').innerText = "Calling...";
-        const stream = await getMedia();
+    // Initiate Call (triggered by either Voice or Video button)
+    async function startCall(videoOption) {
+        isVideoCall = videoOption;
+        document.getElementById('audioCallBtn').innerText = "Calling...";
+        document.getElementById('videoCallBtn').style.display = 'none';
+        
+        const stream = await getMedia(isVideoCall);
         
         peer = new SimplePeer({ initiator: true, trickle: false, stream: stream });
 
         peer.on('signal', (data) => {
-            socket.emit('call_user', { signal: data });
+            socket.emit('call_user', { signal: data, isVideo: isVideoCall });
         });
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
-            document.getElementById('callBtn').innerText = "Connected 🟢";
+            document.getElementById('audioCallBtn').innerText = "Connected 🟢";
         });
     }
 
     // Listen for Incoming Call
     socket.on('incoming_call', (data) => {
         incomingSignal = data.signal;
-        document.getElementById('callBtn').style.display = 'none';
-        document.getElementById('answerBtn').style.display = 'block';
+        isVideoCall = data.isVideo; // Remember if the caller wanted video or voice
+        
+        document.getElementById('outgoingBtns').style.display = 'none';
+        
+        const answerBtn = document.getElementById('answerBtn');
+        answerBtn.style.display = 'block';
+        answerBtn.innerText = isVideoCall ? "🟢 Answer Video Call" : "🟢 Answer Voice Call";
     });
 
     // Answer Call
     async function answerCall() {
-        const stream = await getMedia();
+        const stream = await getMedia(isVideoCall);
         document.getElementById('answerBtn').innerText = "Connecting...";
         
         peer = new SimplePeer({ initiator: false, trickle: false, stream: stream });
@@ -142,8 +159,9 @@
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
             document.getElementById('answerBtn').style.display = 'none';
-            document.getElementById('callBtn').style.display = 'block';
-            document.getElementById('callBtn').innerText = "Connected 🟢";
+            document.getElementById('outgoingBtns').style.display = 'flex';
+            document.getElementById('audioCallBtn').innerText = "Connected 🟢";
+            document.getElementById('videoCallBtn').style.display = 'none';
         });
 
         peer.signal(incomingSignal);
