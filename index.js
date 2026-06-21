@@ -30,10 +30,11 @@ io.on('connection', (socket) => {
 
     // WebRTC Signaling Events for Audio/Video Calling
     socket.on('call_user', (data) => {
-        // Forwards the call offer to the other user
+        // FIXED: Forwards the call offer AND the isVideo choice to the other user
         socket.broadcast.emit('incoming_call', {
             signal: data.signal,
-            from: socket.id
+            from: socket.id,
+            isVideo: data.isVideo
         });
     });
 
