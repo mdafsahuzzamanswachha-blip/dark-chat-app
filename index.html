@@ -9,7 +9,6 @@
         .container { width: 350px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         h2 { text-align: center; margin-top: 0; color: #bb86fc; }
         
-        /* Video Container Styling */
         .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         video { width: 100%; height: 120px; background: #000; border-radius: 8px; object-fit: cover; border: 1px solid #333; }
         
@@ -25,6 +24,7 @@
         .call-controls { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #333; padding-top: 15px; }
         .action-btns { display: flex; gap: 8px; }
         .action-btns button { flex: 1; }
+        .btn-danger { background: #cf6679; color: white; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
@@ -57,7 +57,10 @@
             <button id="audioCallBtn" onclick="startCall(false)" style="background: #03dac6; color: black;">📞 Voice Call</button>
             <button id="videoCallBtn" onclick="startCall(true)" style="background: #bb86fc; color: black;">📹 Video Call</button>
         </div>
-        <button id="answerBtn" onclick="answerCall()" style="display:none; background: #cf6679; color: white; width: 100%;">🟢 Incoming Call (Click to Answer)</button>
+        
+        <button id="answerBtn" onclick="answerCall()" style="display:none; background: #03dac6; width: 100%;">🟢 Incoming Call (Click to Answer)</button>
+        
+        <button id="hangupBtn" onclick="hangupCall()" class="btn-danger" style="display:none; width: 100%;">❌ End Call</button>
     </div>
 </div>
 
@@ -104,7 +107,6 @@
     // --- WEBRTC CALLING LOGIC ---
     async function getMedia(wantVideo) {
         if (!localStream) {
-            // Dynamically requests camera access ONLY if wantVideo is true
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo });
             if (wantVideo) {
                 document.getElementById('localVideo').srcObject = localStream;
@@ -113,11 +115,11 @@
         return localStream;
     }
 
-    // Initiate Call (triggered by either Voice or Video button)
     async function startCall(videoOption) {
         isVideoCall = videoOption;
-        document.getElementById('audioCallBtn').innerText = "Calling...";
-        document.getElementById('videoCallBtn').style.display = 'none';
+        document.getElementById('outgoingBtns').style.display = 'none';
+        document.getElementById('hangupBtn').style.display = 'block';
+        document.getElementById('hangupBtn').innerText = "Calling... ❌ End Call";
         
         const stream = await getMedia(isVideoCall);
         
@@ -129,14 +131,13 @@
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
-            document.getElementById('audioCallBtn').innerText = "Connected 🟢";
+            document.getElementById('hangupBtn').innerText = "❌ End Call";
         });
     }
 
-    // Listen for Incoming Call
     socket.on('incoming_call', (data) => {
         incomingSignal = data.signal;
-        isVideoCall = data.isVideo; // Remember if the caller wanted video or voice
+        isVideoCall = data.isVideo;
         
         document.getElementById('outgoingBtns').style.display = 'none';
         
@@ -145,10 +146,11 @@
         answerBtn.innerText = isVideoCall ? "🟢 Answer Video Call" : "🟢 Answer Voice Call";
     });
 
-    // Answer Call
     async function answerCall() {
         const stream = await getMedia(isVideoCall);
-        document.getElementById('answerBtn').innerText = "Connecting...";
+        document.getElementById('answerBtn').style.display = 'none';
+        document.getElementById('hangupBtn').style.display = 'block';
+        document.getElementById('hangupBtn').innerText = "Connecting... ❌ End Call";
         
         peer = new SimplePeer({ initiator: false, trickle: false, stream: stream });
 
@@ -158,19 +160,48 @@
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
-            document.getElementById('answerBtn').style.display = 'none';
-            document.getElementById('outgoingBtns').style.display = 'flex';
-            document.getElementById('audioCallBtn').innerText = "Connected 🟢";
-            document.getElementById('videoCallBtn').style.display = 'none';
+            document.getElementById('hangupBtn').innerText = "❌ End Call";
         });
 
         peer.signal(incomingSignal);
     }
 
-    // Call Accepted by target
     socket.on('call_accepted', (signal) => {
         peer.signal(signal);
     });
+
+    // --- NEW: HANG UP LOGIC ---
+    function hangupCall() {
+        socket.emit('hangup');
+        resetCallUI();
+    }
+
+    socket.on('call_ended', () => {
+        resetCallUI();
+    });
+
+    function resetCallUI() {
+        // 1. Destroy Peer Connection
+        if (peer) {
+            peer.destroy();
+            peer = null;
+        }
+        
+        // 2. Shut off local camera and microphone tracks completely
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        
+        // 3. Clear Video Screen Feeds
+        document.getElementById('localVideo').srcObject = null;
+        document.getElementById('remoteVideo').srcObject = null;
+        
+        // 4. Reset Button Views
+        document.getElementById('outgoingBtns').style.display = 'flex';
+        document.getElementById('answerBtn').style.display = 'none';
+        document.getElementById('hangupBtn').style.display = 'none';
+    }
 </script>
 </body>
 </html>
