@@ -6,6 +6,7 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
+// Health check endpoint
 app.get('/', (req, res) => {
     res.send('Dark Chat Server is running...');
 });
@@ -14,7 +15,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
@@ -22,49 +23,31 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // Join a specific chat room
-    socket.on('join_room', (roomName) => {
-        socket.join(roomName);
-        console.log(`User ${socket.id} joined room: ${roomName}`);
+    // Direct 1v1 text distribution 
+    socket.on('send_message', (message) => {
+        socket.broadcast.emit('receive_message', message);
     });
 
-    // Listen for text chat messages and send ONLY to that room
-    socket.on('send_message', (data) => {
-        // data looks like: { room: 'room123', message: 'hello' }
-        socket.to(data.room).emit('receive_message', data.message);
+    // Simple 1v1 typing notification toggle
+    socket.on('typing', (isTyping) => {
+        socket.broadcast.emit('user_typing', isTyping);
     });
 
-    // Listen for shared files and relay them ONLY to that room
-    socket.on('send_file', (data) => {
-        // data looks like: { room: 'room123', fileData: 'base64...', fileName: 'img.png', fileType: 'image/png' }
-        socket.to(data.room).emit('receive_file', {
-            fileData: data.fileData,
-            fileName: data.fileName,
-            fileType: data.fileType
-        });
-    });
-
-    // Listen for typing events inside a specific room
-    socket.on('typing', (data) => {
-        // data looks like: { room: 'room123', isTyping: true }
-        socket.to(data.room).emit('user_typing', data.isTyping);
-    });
-
-    // WebRTC Calling - Target specifically within the room context
+    // WebRTC 1v1 Call Routing Events
     socket.on('call_user', (data) => {
-        socket.to(data.room).emit('incoming_call', {
+        // Explicitly forwards the signaling track offer and video flag choice
+        socket.broadcast.emit('incoming_call', {
             signal: data.signal,
-            from: socket.id,
             isVideo: data.isVideo
         });
     });
 
     socket.on('answer_call', (data) => {
-        socket.to(data.room).emit('call_accepted', data.signal);
+        socket.broadcast.emit('call_accepted', data.signal);
     });
     
-    socket.on('hangup', (data) => {
-        socket.to(data.room).emit('call_ended');
+    socket.on('hangup', () => {
+        socket.broadcast.emit('call_ended');
     });
     
     socket.on('disconnect', () => {
