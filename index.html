@@ -3,238 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Dark Multi-Room Chat</title>
+    <title>Sleek 1v1 Chat</title>
     <style>
-        /* CSS Variables to handle instant Theme Switching */
-        :root {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --bg-input: #252525;
-            --bg-box: #181818;
-            --primary: #bb86fc; /* Default Purple Accent */
-            --secondary: #03dac6; /* Default Teal Accent */
-            --danger: #cf6679;
-            --text: #e0e0e0;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0b141a; color: #e9edef; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; hieght: 100vh; height: 100dvh; }
+        
+        /* Main Container - Responsive Phone/Laptop Layout */
+        .app-container { width: 100%; max-width: 450px; height: 100%; background: #0b141a; display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        @media (min-width: 451px) { .app-container { height: 85vh; border-radius: 10px; border: 1px solid #222; } }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-main); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { width: 360px; background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
-        h2 { text-align: center; margin-top: 0; color: var(--primary); }
-        
-        /* Lobby Screen Layout */
-        #lobby-panel { display: flex; flex-direction: column; gap: 12px; }
-        .theme-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 5px 0; }
-        .theme-dot { height: 35px; border-radius: 6px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: #000; }
-        
-        /* Chat Dashboard Layout */
-        #chat-panel { display: none; flex-direction: column; }
-        .room-header { text-align: center; font-size: 14px; color: var(--secondary); margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 8px; }
-        
-        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        video { width: 100%; height: 120px; background: #000; border-radius: 8px; object-fit: cover; border: 1px solid #333; }
-        
-        #chat-box { height: 220px; border: 1px solid #333; background: var(--bg-box); padding: 10px; overflow-y: auto; margin-bottom: 4px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
-        #typing-indicator { height: 16px; font-size: 12px; color: #aaa; margin-bottom: 10px; padding-left: 5px; font-style: italic; }
-        
-        .msg { max-width: 75%; padding: 8px 12px; border-radius: 15px; font-size: 14px; word-wrap: break-word; }
-        .msg.left { background: #2d2d2d; align-self: flex-start; color: #fff; }
-        .msg.right { background: var(--primary); align-self: flex-end; color: #000; font-weight: 500; }
-        .msg img { max-width: 100%; border-radius: 8px; margin-top: 5px; display: block; }
-        .msg a { color: #fff; text-decoration: underline; display: block; margin-top: 5px; font-weight: bold; }
+        /* WhatsApp Style Header Bar */
+        .chat-header { background: #202c33; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2f3b43; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 38px; height: 38px; background: #687e8c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
+        .user-status h3 { margin: 0; font-size: 15px; font-weight: 600; }
+        .user-status span { font-size: 11px; color: #8696a0; }
+        .header-buttons { display: flex; gap: 14px; }
+        .header-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; border-radius: 50%; color: #00a884; transition: 0.2s; }
+        .header-btn:hover { background: #2a3942; }
 
-        .input-area { display: flex; gap: 8px; margin-bottom: 15px; align-items: center; }
-        input { flex: 1; padding: 10px; border: 1px solid #333; border-radius: 6px; background: var(--bg-input); color: white; outline: none; }
-        button { padding: 10px 14px; border: none; border-radius: 6px; background: var(--secondary); color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; }
-        button:hover { opacity: 0.9; }
-        
-        /* File Share Button Look */
-        .file-label { padding: 10px; background: #2d2d2d; border-radius: 6px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; border: 1px solid #444; }
-        .file-label:hover { background: #3d3d3d; }
+        /* Dynamic Video Container */
+        .video-container { display: none; background: #000; position: relative; padding: 6px; box-sizing: border-box; border-bottom: 1px solid #2f3b43; }
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
+        video { width: 100%; height: 140px; background: #111; border-radius: 8px; object-fit: cover; border: 1px solid #333; }
 
-        .call-controls { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #333; padding-top: 15px; }
-        .action-btns { display: flex; gap: 8px; }
-        .action-btns button { flex: 1; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-secondary { background: #333; color: white; border: 1px solid #555; }
-        .active-off { background: #555; color: var(--danger); }
+        /* Chat Message Box Area */
+        #chat-box { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background-image: linear-gradient(rgba(11,20,26,0.95), rgba(11,20,26,0.95)), url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-size: contain; }
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4; word-wrap: break-word; position: relative; }
+        .msg.left { background: #202c33; align-self: flex-start; color: #e9edef; border-top-left-radius: 0; }
+        .msg.right { background: #005c4b; align-self: flex-end; color: #e9edef; border-top-right-radius: 0; }
+        
+        /* Incoming Call Popup Overlay */
+        #incoming-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11,20,26,0.9); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        .ring-btn { padding: 12px 24px; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; color: white; display: flex; align-items: center; gap: 8px; }
+
+        /* Input Area Footer */
+        .chat-footer { background: #202c33; padding: 10px; display: flex; align-items: center; gap: 8px; }
+        .input-wrapper { flex: 1; background: #2a3942; border-radius: 8px; padding: 2px 8px; display: flex; align-items: center; }
+        input { width: 100%; padding: 10px; border: none; background: transparent; color: white; outline: none; font-size: 14px; }
+        .send-btn { width: 40px; height: 40px; border-radius: 50%; background: #00a884; border: none; color: white; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
 </head>
 <body>
 
-<div class="container">
-    <h2>Dark Chat</h2>
-    
-    <div id="lobby-panel">
-        <label style="font-size:14px; color:#aaa;">Enter Room Name / Code:</label>
-        <input type="text" id="room-input" placeholder="e.g. gaming-room, lounge123">
-        
-        <label style="font-size:14px; color:#aaa; margin-top:5px;">🎨 Select Accent Accent:</label>
-        <div class="theme-selector">
-            <div class="theme-dot" style="background:#bb86fc;" onclick="setTheme('#bb86fc','#03dac6')">Purp</div>
-            <div class="theme-dot" style="background:#ff79c6;" onclick="setTheme('#ff79c6','#8be9fd')">Pink</div>
-            <div class="theme-dot" style="background:#50fa7b;" onclick="setTheme('#50fa7b','#f1fa8c')">Neon</div>
-            <div class="theme-dot" style="background:#ffb86c;" onclick="setTheme('#ffb86c','#ff5555')">Fire</div>
+<div class="app-container">
+    <div class="chat-header">
+        <div class="user-info">
+            <div class="avatar">C</div>
+            <div class="user-status">
+                <h3 id="header-title">Connected Peer</h3>
+                <span id="typing-status">online</span>
+            </div>
         </div>
-        
-        <button onclick="joinRoom()" style="margin-top:10px; height:42px; font-size:15px;">🚀 Join Chat Space</button>
+        <div class="header-buttons" id="lobby-buttons">
+            <button class="header-btn" onclick="startCall(false)" title="Voice Call">📞</button>
+            <button class="header-btn" onclick="startCall(true)" title="Video Call">📹</button>
+        </div>
     </div>
 
-    <div id="chat-panel">
-        <div id="active-room-title" class="room-header">Room: None</div>
-        
+    <div class="video-container" id="mediaContainer">
         <div class="video-grid">
-            <div>
-                <small style="display:block; text-align:center; margin-bottom:4px; color:#aaa;">You</small>
-                <video id="localVideo" autoplay muted playsinline></video>
-            </div>
-            <div>
-                <small style="display:block; text-align:center; margin-bottom:4px; color:#aaa;">Remote</small>
-                <video id="remoteVideo" autoplay playsinline></video>
-            </div>
+            <video id="localVideo" autoplay muted playsinline></video>
+            <video id="remoteVideo" autoplay playsinline></video>
         </div>
+        <button onclick="hangupCall()" style="width:100%; background:#ea0038; color:white; border:none; padding:8px; border-radius:5px; font-weight:bold; margin-top:6px; cursor:pointer;">❌ End Call</button>
+    </div>
 
-        <div id="chat-box"></div>
-        <div id="typing-indicator"></div>
+    <div id="chat-box"></div>
 
-        <div class="input-area">
-            <label class="file-label" title="Share an image or document">
-                📎
-                <input type="file" id="file-input" style="display:none;" onchange="sendFile(this)">
-            </label>
-            
-            <input type="text" id="message-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)" oninput="emitTypingState(true)" onblur="emitTypingState(false)">
-            <button onclick="sendMessage()">Send</button>
+    <div id="incoming-overlay">
+        <h2 id="ring-label" style="color:white; margin:0;">Incoming Call...</h2>
+        <div style="display:flex; gap:15px;">
+            <button class="ring-btn" onclick="answerCall()" style="background:#00a884;">🟢 Answer</button>
+            <button class="ring-btn" onclick="hangupCall()" style="background:#ea0038;">❌ Decline</button>
         </div>
+    </div>
 
-        <div class="call-controls">
-            <div id="outgoingBtns" class="action-btns">
-                <button id="audioCallBtn" onclick="startCall(false)">📞 Voice</button>
-                <button id="videoCallBtn" onclick="startCall(true)">📹 Video</button>
-            </div>
-            
-            <button id="answerBtn" onclick="answerCall()" style="display:none; width: 100%;">🟢 Incoming Call</button>
-            
-            <div id="activeCallControls" style="display:none; display: flex; flex-direction:column; gap:8px;">
-                <div class="action-btns">
-                    <button id="muteBtn" onclick="toggleMute()" class="btn-secondary">🎙️ Mute Mic</button>
-                    <button id="cameraBtn" onclick="toggleCamera()" class="btn-secondary">📷 Cam Off</button>
-                </div>
-                <button id="hangupBtn" onclick="hangupCall()" class="btn-danger" style="width: 100%;">❌ End Call</button>
-            </div>
+    <div class="chat-footer">
+        <div class="input-wrapper">
+            <input type="text" id="message-input" placeholder="Type a message" onkeypress="handleKeyPress(event)" oninput="handleTyping(true)" onblur="handleTyping(false)">
         </div>
+        <button class="send-btn" onclick="sendMessage()">🕊️</button>
     </div>
 </div>
 
 <script>
     const BACKEND_URL = "https://dark-chat-backend-2v8y.onrender.com"; 
-    
     const socket = io(BACKEND_URL);
+    
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
-    const typingIndicator = document.getElementById('typing-indicator');
     
-    let currentRoom = "";
     let localStream;
     let peer;
     let incomingSignal;
     let isVideoCall = false;
     let typingTimeout;
-    
-    let micEnabled = true;
-    let camEnabled = true;
 
-    // --- 🎨 ACCENT THEME TOGGLE LOGIC ---
-    function setTheme(prim, sec) {
-        document.documentElement.style.setProperty('--primary', prim);
-        document.documentElement.style.setProperty('--secondary', sec);
-    }
-
-    // --- 👥 ROOM ENTRY HANDLING ---
-    function joinRoom() {
-        const roomInput = document.getElementById('room-input').value.trim();
-        if (roomInput === "") {
-            alert("Please input a valid room key!");
-            return;
-        }
-        currentRoom = roomInput;
-        document.getElementById('active-room-title').innerText = "Active Room: " + currentRoom;
-        
-        // Let backend pipeline know we are clustering here
-        socket.emit('join_room', currentRoom);
-        
-        // Toggle view containers
-        document.getElementById('lobby-panel').style.display = 'none';
-        document.getElementById('chat-panel').style.display = 'flex';
-    }
-
-    // --- TEXT MESSAGING & INLINE STREAM UPDATES ---
-    socket.on('receive_message', (message) => {
-        appendMessage(message, 'left');
-    });
-
-    // 📂 Listen for shared files from room peers
-    socket.on('receive_file', (data) => {
-        appendFileMessage(data, 'left');
-    });
+    // --- TEXT CHAT & TYPING ---
+    socket.on('receive_message', (msg) => appendMessage(msg, 'left'));
 
     socket.on('user_typing', (isTyping) => {
-        if (isTyping) {
-            typingIndicator.innerText = "Someone is typing...";
-        } else {
-            typingIndicator.innerText = "";
-        }
+        document.getElementById('typing-status').innerText = isTyping ? "typing..." : "online";
     });
 
-    function emitTypingState(isTyping) {
-        if (!currentRoom) return;
+    function handleTyping(isTyping) {
         if (!isTyping) {
-            socket.emit('typing', { room: currentRoom, isTyping: false });
+            socket.emit('typing', false);
             return;
         }
-        socket.emit('typing', { room: currentRoom, isTyping: true });
+        socket.emit('typing', true);
         clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            socket.emit('typing', { room: currentRoom, isTyping: false });
-        }, 2000);
+        typingTimeout = setTimeout(() => socket.emit('typing', false), 2000);
     }
 
     function sendMessage() {
         const message = messageInput.value.trim();
-        if(message !== "" && currentRoom) {
-            socket.emit('send_message', { room: currentRoom, message: message });
+        if(message !== "") {
+            socket.emit('send_message', message);
             appendMessage(message, 'right');
             messageInput.value = "";
-            emitTypingState(false);
+            socket.emit('typing', false);
         }
     }
 
-    // 📂 Process local file upload and translate to payload
-    function sendFile(element) {
-        const file = element.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const filePayload = {
-                room: currentRoom,
-                fileData: e.target.result,
-                fileName: file.name,
-                fileType: file.type
-            };
-            socket.emit('send_file', filePayload);
-            appendFileMessage(filePayload, 'right');
-        };
-        reader.readAsDataURL(file); // Converts binary files to text payload safely
-        element.value = ''; // Reset input selection element
-    }
-
-    function handleKeyPress(event) {
-        if (event.key === 'Enter') {
-            sendMessage();
-        }
-    }
+    function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
     function appendMessage(text, side) {
         const msgDiv = document.createElement('div');
@@ -244,145 +138,78 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function appendFileMessage(data, side) {
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('msg', side);
-        
-        const titleSpan = document.createElement('span');
-        titleSpan.innerText = "Shared File: " + data.fileName;
-        msgDiv.appendChild(titleSpan);
-
-        // If it's an image, render preview directly inside chat box
-        if (data.fileType.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = data.fileData;
-            msgDiv.appendChild(img);
-        } else {
-            // Otherwise render file asset as a safe external download link
-            const link = document.createElement('a');
-            link.href = data.fileData;
-            link.download = data.fileName;
-            link.innerText = "📥 Download File";
-            msgDiv.appendChild(link);
-        }
-
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // --- WEBRTC CALLING LOGIC (ROOM ISOLATED) ---
+    // --- WEBRTC CORE CALL HANDLING ---
     async function getMedia(wantVideo) {
         if (!localStream) {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo });
-            if (wantVideo) {
-                document.getElementById('localVideo').srcObject = localStream;
-            }
+            document.getElementById('localVideo').srcObject = localStream;
         }
         return localStream;
     }
 
     async function startCall(videoOption) {
-        if(!currentRoom) return;
         isVideoCall = videoOption;
-        document.getElementById('outgoingBtns').style.display = 'none';
-        document.getElementById('activeCallControls').style.display = 'block';
+        document.getElementById('mediaContainer').style.display = 'block';
+        document.getElementById('header-title').innerText = "Calling...";
         
         const stream = await getMedia(isVideoCall);
-        
         peer = new SimplePeer({ initiator: true, trickle: false, stream: stream });
 
         peer.on('signal', (data) => {
-            socket.emit('call_user', { room: currentRoom, signal: data, isVideo: isVideoCall });
+            socket.emit('call_user', { signal: data, isVideo: isVideoCall });
         });
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
+            document.getElementById('header-title').innerText = "Active Call";
         });
     }
 
     socket.on('incoming_call', (data) => {
         incomingSignal = data.signal;
-        isVideoCall = data.isVideo;
+        isVideoCall = data.isVideo; 
         
-        document.getElementById('outgoingBtns').style.display = 'none';
-        
-        const answerBtn = document.getElementById('answerBtn');
-        answerBtn.style.display = 'block';
-        answerBtn.innerText = isVideoCall ? "🟢 Answer Video Call" : "🟢 Answer Voice Call";
+        document.getElementById('incoming-overlay').style.display = 'flex';
+        document.getElementById('ring-label').innerText = isVideoCall ? "📹 Video Call Request..." : "📞 Voice Call Request...";
     });
 
     async function answerCall() {
-        const stream = await getMedia(isVideoCall);
-        document.getElementById('answerBtn').style.display = 'none';
-        document.getElementById('activeCallControls').style.display = 'block';
+        document.getElementById('incoming-overlay').style.display = 'none';
+        document.getElementById('mediaContainer').style.display = 'block';
+        document.getElementById('header-title').innerText = "Connecting...";
         
+        const stream = await getMedia(isVideoCall);
         peer = new SimplePeer({ initiator: false, trickle: false, stream: stream });
 
         peer.on('signal', (data) => {
-            socket.emit('answer_call', { room: currentRoom, signal: data });
+            socket.emit('answer_call', { signal: data });
         });
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
+            document.getElementById('header-title').innerText = "Active Call";
         });
 
         peer.signal(incomingSignal);
     }
 
-    socket.on('call_accepted', (signal) => {
-        peer.signal(signal);
-    });
-
-    function toggleMute() {
-        if (localStream) {
-            micEnabled = !micEnabled;
-            localStream.getAudioTracks()[0].enabled = micEnabled;
-            const btn = document.getElementById('muteBtn');
-            btn.innerText = micEnabled ? "🎙️ Mute Mic" : "🔇 Unmute Mic";
-            btn.classList.toggle('active-off', !micEnabled);
-        }
-    }
-
-    function toggleCamera() {
-        if (localStream && localStream.getVideoTracks().length > 0) {
-            camEnabled = !camEnabled;
-            localStream.getVideoTracks()[0].enabled = camEnabled;
-            const btn = document.getElementById('cameraBtn');
-            btn.innerText = camEnabled ? "📷 Cam Off" : "📸 Cam On";
-            btn.classList.toggle('active-off', !camEnabled);
-        }
-    }
+    socket.on('call_accepted', (signal) => peer.signal(signal));
 
     function hangupCall() {
-        socket.emit('hangup', { room: currentRoom });
-        resetCallUI();
+        socket.emit('hangup');
+        resetUI();
     }
 
-    socket.on('call_ended', () => {
-        resetCallUI();
-    });
+    socket.on('call_ended', () => resetUI());
 
-    function resetCallUI() {
-        if (peer) {
-            peer.destroy();
-            peer = null;
-        }
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localStream = null;
-        }
+    function resetUI() {
+        if (peer) { peer.destroy(); peer = null; }
+        if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
         document.getElementById('localVideo').srcObject = null;
         document.getElementById('remoteVideo').srcObject = null;
-        document.getElementById('outgoingBtns').style.display = 'flex';
-        document.getElementById('answerBtn').style.display = 'none';
-        document.getElementById('activeCallControls').style.display = 'none';
-        
-        micEnabled = true;
-        camEnabled = true;
-        document.getElementById('muteBtn').innerText = "🎙️ Mute Mic";
-        document.getElementById('muteBtn').classList.remove('active-off');
-        document.getElementById('cameraBtn').innerText = "📷 Cam Off";
-        document.getElementById('cameraBtn').classList.remove('active-off');
+        document.getElementById('mediaContainer').style.display = 'none';
+        document.getElementById('incoming-overlay').style.display = 'none';
+        document.getElementById('header-title').innerText = "Connected Peer";
     }
 </script>
 </body>
