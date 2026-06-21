@@ -12,7 +12,9 @@
         .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         video { width: 100%; height: 120px; background: #000; border-radius: 8px; object-fit: cover; border: 1px solid #333; }
         
-        #chat-box { height: 220px; border: 1px solid #333; background: #181818; padding: 10px; overflow-y: auto; margin-bottom: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+        #chat-box { height: 220px; border: 1px solid #333; background: #181818; padding: 10px; overflow-y: auto; margin-bottom: 4px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+        #typing-indicator { height: 16px; font-size: 12px; color: #aaa; margin-bottom: 10px; padding-left: 5px; font-style: italic; }
+        
         .msg { max-width: 75%; padding: 8px 12px; border-radius: 15px; font-size: 14px; word-wrap: break-word; }
         .msg.left { background: #2d2d2d; align-self: flex-start; color: #fff; }
         .msg.right { background: #3700b3; align-self: flex-end; color: #fff; }
@@ -25,6 +27,8 @@
         .action-btns { display: flex; gap: 8px; }
         .action-btns button { flex: 1; }
         .btn-danger { background: #cf6679; color: white; }
+        .btn-secondary { background: #333; color: white; border: 1px solid #555; }
+        .active-off { background: #555; color: #cf6679; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
@@ -46,9 +50,10 @@
     </div>
 
     <div id="chat-box"></div>
+    <div id="typing-indicator"></div>
 
     <div class="input-area">
-        <input type="text" id="message-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+        <input type="text" id="message-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)" oninput="emitTypingState(true)" onblur="emitTypingState(false)">
         <button onclick="sendMessage()">Send</button>
     </div>
 
@@ -59,7 +64,14 @@
         </div>
         
         <button id="answerBtn" onclick="answerCall()" style="display:none; background: #03dac6; width: 100%;">🟢 Incoming Call</button>
-        <button id="hangupBtn" onclick="hangupCall()" class="btn-danger" style="display:none; width: 100%;">❌ End Call</button>
+        
+        <div id="activeCallControls" style="display:none; display: flex; flex-direction:column; gap:8px;">
+            <div class="action-btns">
+                <button id="muteBtn" onclick="toggleMute()" class="btn-secondary">🎙️ Mute Mic</button>
+                <button id="cameraBtn" onclick="toggleCamera()" class="btn-secondary">📷 Cam Off</button>
+            </div>
+            <button id="hangupBtn" onclick="hangupCall()" class="btn-danger" style="width: 100%;">❌ End Call</button>
+        </div>
     </div>
 </div>
 
@@ -69,16 +81,43 @@
     const socket = io(BACKEND_URL);
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
+    const typingIndicator = document.getElementById('typing-indicator');
     
     let localStream;
     let peer;
     let incomingSignal;
     let isVideoCall = false;
+    let typingTimeout;
+    
+    let micEnabled = true;
+    let camEnabled = true;
 
     // --- TEXT MESSAGE LOGIC ---
     socket.on('receive_message', (message) => {
         appendMessage(message, 'left');
     });
+
+    // ADDED: Handle incoming typing alerts
+    socket.on('user_typing', (isTyping) => {
+        if (isTyping) {
+            typingIndicator.innerText = "Someone is typing...";
+        } else {
+            typingIndicator.innerText = "";
+        }
+    });
+
+    // ADDED: Send out current typing status with a built-in timeout helper
+    function emitTypingState(isTyping) {
+        if (!isTyping) {
+            socket.emit('typing', false);
+            return;
+        }
+        socket.emit('typing', true);
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            socket.emit('typing', false);
+        }, 2000); // clears automatically after 2 seconds of no key inputs
+    }
 
     function sendMessage() {
         const message = messageInput.value.trim();
@@ -86,6 +125,7 @@
             socket.emit('send_message', message);
             appendMessage(message, 'right');
             messageInput.value = "";
+            emitTypingState(false);
         }
     }
 
@@ -107,7 +147,6 @@
     async function getMedia(wantVideo) {
         if (!localStream) {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo });
-            // FIXED: Show your local camera preview instantly if video is selected
             if (wantVideo) {
                 document.getElementById('localVideo').srcObject = localStream;
             }
@@ -118,8 +157,7 @@
     async function startCall(videoOption) {
         isVideoCall = videoOption;
         document.getElementById('outgoingBtns').style.display = 'none';
-        document.getElementById('hangupBtn').style.display = 'block';
-        document.getElementById('hangupBtn').innerText = "Calling... ❌ End Call";
+        document.getElementById('activeCallControls').style.display = 'block';
         
         const stream = await getMedia(isVideoCall);
         
@@ -131,7 +169,6 @@
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
-            document.getElementById('hangupBtn').innerText = "❌ End Call";
         });
     }
 
@@ -149,8 +186,7 @@
     async function answerCall() {
         const stream = await getMedia(isVideoCall);
         document.getElementById('answerBtn').style.display = 'none';
-        document.getElementById('hangupBtn').style.display = 'block';
-        document.getElementById('hangupBtn').innerText = "Connecting... ❌ End Call";
+        document.getElementById('activeCallControls').style.display = 'block';
         
         peer = new SimplePeer({ initiator: false, trickle: false, stream: stream });
 
@@ -160,7 +196,6 @@
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
-            document.getElementById('hangupBtn').innerText = "❌ End Call";
         });
 
         peer.signal(incomingSignal);
@@ -169,6 +204,28 @@
     socket.on('call_accepted', (signal) => {
         peer.signal(signal);
     });
+
+    // ADDED: Toggle Audio Track State
+    function toggleMute() {
+        if (localStream) {
+            micEnabled = !micEnabled;
+            localStream.getAudioTracks()[0].enabled = micEnabled;
+            const btn = document.getElementById('muteBtn');
+            btn.innerText = micEnabled ? "🎙️ Mute Mic" : "🔇 Unmute Mic";
+            btn.classList.toggle('active-off', !micEnabled);
+        }
+    }
+
+    // ADDED: Toggle Video Track State
+    function toggleCamera() {
+        if (localStream && localStream.getVideoTracks().length > 0) {
+            camEnabled = !camEnabled;
+            localStream.getVideoTracks()[0].enabled = camEnabled;
+            const btn = document.getElementById('cameraBtn');
+            btn.innerText = camEnabled ? "📷 Cam Off" : "📸 Cam On";
+            btn.classList.toggle('active-off', !camEnabled);
+        }
+    }
 
     function hangupCall() {
         socket.emit('hangup');
@@ -192,7 +249,15 @@
         document.getElementById('remoteVideo').srcObject = null;
         document.getElementById('outgoingBtns').style.display = 'flex';
         document.getElementById('answerBtn').style.display = 'none';
-        document.getElementById('hangupBtn').style.display = 'none';
+        document.getElementById('activeCallControls').style.display = 'none';
+        
+        // Reset control button toggles cleanly
+        micEnabled = true;
+        camEnabled = true;
+        document.getElementById('muteBtn').innerText = "🎙️ Mute Mic";
+        document.getElementById('muteBtn').classList.remove('active-off');
+        document.getElementById('cameraBtn').innerText = "📷 Cam Off";
+        document.getElementById('cameraBtn').classList.remove('active-off');
     }
 </script>
 </body>
