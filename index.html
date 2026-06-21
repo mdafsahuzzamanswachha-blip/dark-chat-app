@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Chat</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { width: 350px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { text-align: center; margin-top: 0; color: #bb86fc; }
+        #chat-box { height: 300px; border: 1px solid #333; background: #181818; padding: 10px; overflow-y: auto; margin-bottom: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 15px; font-size: 14px; word-wrap: break-word; }
+        .msg.left { background: #2d2d2d; align-self: flex-start; color: #fff; }
+        .msg.right { background: #3700b3; align-self: flex-end; color: #fff; }
+        .input-area { display: flex; gap: 8px; margin-bottom: 15px; }
+        input { flex: 1; padding: 10px; border: 1px solid #333; border-radius: 6px; background: #252525; color: white; outline: none; }
+        button { padding: 10px 16px; border: none; border-radius: 6px; background: #03dac6; color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        .call-controls { display: flex; justify-content: space-around; gap: 8px; border-top: 1px solid #333; padding-top: 15px; }
+        .btn-call { background: #cf6679; color: white; width: 100%; }
+        audio { display: none; }
+    </style>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>Dark Chat</h2>
+    <div id="chat-box"></div>
+
+    <div class="input-area">
+        <input type="text" id="message-input" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="call-controls">
+        <button id="callBtn" onclick="startCall()">📞 Start Voice Call</button>
+        <button id="answerBtn" onclick="answerCall()" style="display:none; background: #03dac6;">🟢 Answer Call</button>
+    </div>
+</div>
+
+<audio id="remoteAudio" autoplay></audio>
+
+<script>
+    // ⚠️ REPLACE THIS URL WITH YOUR LIVE RENDER BACKEND URL ⚠️
+    const BACKEND_URL = "https://dark-chat-backend-2v8y.onrender.com"; 
+    
+    const socket = io(BACKEND_URL);
+    const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    
+    let localStream;
+    let peer;
+    let incomingSignal;
+
+    // --- TEXT MESSAGE LOGIC ---
+    socket.on('receive_message', (message) => {
+        appendMessage(message, 'left');
+    });
+
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if(message !== "") {
+            socket.emit('send_message', message);
+            appendMessage(message, 'right');
+            messageInput.value = "";
+        }
+    }
+
+    function appendMessage(text, side) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('msg', side);
+        msgDiv.innerText = text;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // --- WEBRTC CALLING LOGIC ---
+    async function getMedia() {
+        if (!localStream) {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        }
+        return localStream;
+    }
+
+    // Initiate Call
+    async function startCall() {
+        document.getElementById('callBtn').innerText = "Dialing...";
+        const stream = await getMedia();
+        
+        peer = new SimplePeer({ initiator: true, trickle: false, stream: stream });
+
+        peer.on('signal', (data) => {
+            socket.emit('call_user', { signal: data });
+        });
+
+        peer.on('stream', (remoteStream) => {
+            document.getElementById('remoteAudio').srcObject = remoteStream;
+            document.getElementById('callBtn').innerText = "Connected 📞";
+        });
+    }
+
+    // Listen for Incoming Call
+    socket.on('incoming_call', (data) => {
+        incomingSignal = data.signal;
+        document.getElementById('callBtn').style.display = 'none';
+        document.getElementById('answerBtn').style.display = 'block';
+    });
+
+    // Answer Call
+    async function answerCall() {
+        const stream = await getMedia();
+        document.getElementById('answerBtn').innerText = "Connecting...";
+        
+        peer = new SimplePeer({ initiator: false, trickle: false, stream: stream });
+
+        peer.on('signal', (data) => {
+            socket.emit('answer_call', { signal: data });
+        });
+
+        peer.on('stream', (remoteStream) => {
+            document.getElementById('remoteAudio').srcObject = remoteStream;
+            document.getElementById('answerBtn').style.display = 'none';
+            document.getElementById('callBtn').style.display = 'block';
+            document.getElementById('callBtn').innerText = "Connected 📞";
+        });
+
+        peer.signal(incomingSignal);
+    }
+
+    // Call Accepted by target
+    socket.on('call_accepted', (signal) => {
+        peer.signal(signal);
+    });
+</script>
+</body>
+</html>
