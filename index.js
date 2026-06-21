@@ -6,7 +6,6 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-// A simple route just to verify the backend is up
 app.get('/', (req, res) => {
     res.send('Dark Chat Server is running...');
 });
@@ -15,7 +14,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "*", // Allows any frontend client to connect for now
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -23,20 +22,37 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // Listen for text chat messages and broadcast them
+    // Join a specific chat room
+    socket.on('join_room', (roomName) => {
+        socket.join(roomName);
+        console.log(`User ${socket.id} joined room: ${roomName}`);
+    });
+
+    // Listen for text chat messages and send ONLY to that room
     socket.on('send_message', (data) => {
-        socket.broadcast.emit('receive_message', data);
+        // data looks like: { room: 'room123', message: 'hello' }
+        socket.to(data.room).emit('receive_message', data.message);
     });
 
-    // 🌟 ADDED: Listen for typing events and broadcast them to the other user
-    socket.on('typing', (isTyping) => {
-        socket.broadcast.emit('user_typing', isTyping);
+    // Listen for shared files and relay them ONLY to that room
+    socket.on('send_file', (data) => {
+        // data looks like: { room: 'room123', fileData: 'base64...', fileName: 'img.png', fileType: 'image/png' }
+        socket.to(data.room).emit('receive_file', {
+            fileData: data.fileData,
+            fileName: data.fileName,
+            fileType: data.fileType
+        });
     });
 
-    // WebRTC Signaling Events for Audio/Video Calling
+    // Listen for typing events inside a specific room
+    socket.on('typing', (data) => {
+        // data looks like: { room: 'room123', isTyping: true }
+        socket.to(data.room).emit('user_typing', data.isTyping);
+    });
+
+    // WebRTC Calling - Target specifically within the room context
     socket.on('call_user', (data) => {
-        // FIXED: Forwards the call offer AND the isVideo choice to the other user
-        socket.broadcast.emit('incoming_call', {
+        socket.to(data.room).emit('incoming_call', {
             signal: data.signal,
             from: socket.id,
             isVideo: data.isVideo
@@ -44,13 +60,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('answer_call', (data) => {
-        // Forwards the call acceptance back to the caller
-        socket.broadcast.emit('call_accepted', data.signal);
+        socket.to(data.room).emit('call_accepted', data.signal);
     });
     
-    socket.on('hangup', () => {
-        // Forwards the hangup signal to the other person
-        socket.broadcast.emit('call_ended');
+    socket.on('hangup', (data) => {
+        socket.to(data.room).emit('call_ended');
     });
     
     socket.on('disconnect', () => {
