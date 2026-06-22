@@ -76,7 +76,6 @@
             justify-content: space-between; 
             border-bottom: 1px solid var(--border-color); 
             flex-shrink: 0;
-            -webkit-user-select: none; user-select: none;
         }
         .user-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .avatar { width: 38px; height: 38px; background: #687e8c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; overflow: hidden; background-size: cover; background-position: center; }
@@ -123,34 +122,8 @@
             box-sizing: border-box;
             position: relative;
         }
-        .input-wrapper { flex: 1; background: var(--input-bg); border-radius: 24px; padding: 2px 12px; display: flex; align-items: center; gap: 8px; }
+        .input-wrapper { flex: 1; background: var(--input-bg); border-radius: 24px; padding: 2px 16px; display: flex; align-items: center; gap: 8px; }
         input { width: 100%; padding: 10px 4px; border: none; background: transparent; color: var(--text-main); outline: none; font-size: 15px; }
-        
-        .emoji-toggle-btn { 
-            background: none; 
-            border: none; 
-            font-size: 20px; 
-            cursor: pointer; 
-            color: var(--text-sub); 
-            padding: 0; 
-            display: flex; 
-            align-items: center;
-            -webkit-user-select: none; user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        #picker-container {
-            display: none;
-            position: absolute;
-            bottom: 65px;
-            left: 12px;
-            z-index: 100;
-            width: 280px;
-            height: 300px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border-radius: 8px;
-            overflow: hidden;
-        }
 
         .send-btn { 
             width: 44px; 
@@ -166,7 +139,6 @@
             justify-content: center;
             flex-shrink: 0;
             outline: none;
-            -webkit-user-select: none; user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -182,7 +154,6 @@
             justify-content: space-between;
             padding: 50px 20px;
             box-sizing: border-box;
-            -webkit-user-select: none; user-select: none;
         }
 
         .call-profile { text-align: center; margin-top: 20px; }
@@ -204,7 +175,6 @@
         .call-ctrl-btn { width: 52px; height: 52px; border-radius: 50%; border: none; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; background: rgba(255,255,255,0.15); transition: 0.2s; -webkit-tap-highlight-color: transparent; }
         .btn-hangup { background: #ea0038; width: 62px; height: 62px; font-size: 22px; }
         .active-off { background: rgba(234, 0, 56, 0.4) !important; color: #ff8fa3 !important; }
-        .active-on { background: #00a884 !important; color: white !important; }
 
         #incoming-overlay { 
             display: none; 
@@ -216,7 +186,6 @@
             align-items: center; 
             justify-content: center; 
             gap: 25px; 
-            -webkit-user-select: none; user-select: none;
         }
         .ring-btn { padding: 14px 32px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 15px; color: white; display: flex; align-items: center; gap: 8px; -webkit-tap-highlight-color: transparent; }
         
@@ -224,7 +193,6 @@
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/picmo@5.8.4/dist/umd/index.js"></script>
 </head>
 <body>
 
@@ -248,11 +216,9 @@
         </div>
 
         <div id="chat-box"></div>
-        <div id="picker-container"></div>
 
         <div class="chat-footer">
             <div class="input-wrapper">
-                <button class="emoji-toggle-btn" onclick="toggleEmojiPicker()" type="button">😀</button>
                 <input type="text" id="message-input" placeholder="Type a message" onkeypress="handleKeyPress(event)" oninput="handleTyping(true)" onblur="handleTyping(false)">
             </div>
             <button class="send-btn" onclick="sendMessage()" type="button">🕊️</button>
@@ -296,7 +262,6 @@
     
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
-    const pickerContainer = document.getElementById('picker-container');
     
     let localStream;
     let peer;
@@ -362,31 +327,6 @@
         }
     }
 
-    // --- Safe Emoji Picker Initialization ---
-    let picker;
-    try {
-        if (typeof picmo !== 'undefined' && pickerContainer) {
-            picker = picmo.createPicker({ rootElement: pickerContainer, theme: 'dark' });
-            picker.addEventListener('emoji:select', event => {
-                messageInput.value += event.emoji;
-                messageInput.focus();
-            });
-        }
-    } catch (e) {
-        console.log("Emoji picker init error caught safely:", e);
-    }
-
-    function toggleEmojiPicker() {
-        if(pickerContainer) {
-            pickerContainer.style.display = pickerContainer.style.display === 'block' ? 'none' : 'block';
-        }
-    }
-    if(chatBox) {
-        chatBox.addEventListener('click', () => {
-            if(pickerContainer) pickerContainer.style.display = 'none';
-        });
-    }
-
     // --- TEXT CHAT & TYPING WITH DATABASE HISTORY ---
     socket.on('chat_history', (history) => {
         if(chatBox) {
@@ -419,7 +359,6 @@
             appendMessage(message, 'right'); 
             messageInput.value = "";
             socket.emit('typing', false);
-            if(pickerContainer) pickerContainer.style.display = 'none';
             messageInput.focus();
         }
     }
