@@ -51,7 +51,6 @@
             justify-content: space-between; 
             border-bottom: 1px solid #2f3b43; 
             flex-shrink: 0;
-            /* Prevent header text selection popup */
             -webkit-user-select: none; user-select: none;
         }
         .user-info { display: flex; align-items: center; gap: 10px; }
@@ -90,7 +89,7 @@
             padding: 10px 12px; 
             display: flex; 
             align-items: center; 
-            gap: 8px; 
+            gap: 12px; /* Increased gap to prevent mis-clicks */
             flex-shrink: 0;
             box-sizing: border-box;
             position: relative;
@@ -124,7 +123,7 @@
             overflow: hidden;
         }
 
-        /* FIXED: Added user-select restrictions & tap highlights to stop copy-paste overlay */
+        /* Pure CSS fix to avoid browser highlights and text overlays */
         .send-btn { 
             width: 44px; 
             height: 44px; 
@@ -138,10 +137,17 @@
             align-items: center; 
             justify-content: center;
             flex-shrink: 0;
+            outline: none;
+            
+            /* Strict CSS layer properties to override copy/paste menu overlaps */
             -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            outline: none;
+        }
+        .send-btn:active {
+            background: #008f72;
         }
 
         /* FULLSCREEN WHATSAPP STYLE CALL SCREEN */
@@ -226,7 +232,7 @@
                 <button class="emoji-toggle-btn" onclick="toggleEmojiPicker()" type="button">😀</button>
                 <input type="text" id="message-input" placeholder="Type a message" onkeypress="handleKeyPress(event)" oninput="handleTyping(true)" onblur="handleTyping(false)">
             </div>
-            <button class="send-btn" onclick="sendMessage()" ontouchstart="handleTouchSend(event)" type="button">🕊️</button>
+            <button class="send-btn" onclick="sendMessage()" type="button">🕊️</button>
         </div>
     </div>
 
@@ -310,12 +316,6 @@
             pickerContainer.style.display = 'none';
             messageInput.focus();
         }
-    }
-    
-    // FIXED: Mobile touch interceptor to prevent standard browser selection layout popups on submit
-    function handleTouchSend(e) {
-        e.preventDefault(); // Blocks the browser from trying to select text/showing menu
-        sendMessage();
     }
 
     function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
