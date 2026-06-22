@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sleek 1v1 Chat</title>
+    <title>Sleek 1v1 Chat with Emojis</title>
     <style>
-        /* CSS resets for absolute mobile application fullscreen wrap */
         html, body { 
             margin: 0; 
             padding: 0; 
@@ -23,7 +22,6 @@
             align-items: center; 
         }
         
-        /* Fixed Layout Structure - dynamically scales safely on mobile webviews */
         .app-container { 
             width: 100%; 
             height: 100%; 
@@ -44,7 +42,6 @@
             } 
         }
 
-        /* WhatsApp Style Header Bar */
         .chat-header { 
             background: #202c33; 
             padding: 10px 16px; 
@@ -52,7 +49,7 @@
             align-items: center; 
             justify-content: space-between; 
             border-bottom: 1px solid #2f3b43; 
-            flex-shrink: 0; /* Prevents header from shrinking */
+            flex-shrink: 0;
         }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .avatar { width: 38px; height: 38px; background: #687e8c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
@@ -61,12 +58,10 @@
         .header-buttons { display: flex; gap: 16px; }
         .header-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #00a884; }
 
-        /* Dynamic Video Container */
         .video-container { display: none; background: #000; padding: 6px; box-sizing: border-box; border-bottom: 1px solid #2f3b43; flex-shrink: 0; }
         .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
         video { width: 100%; height: 120px; background: #111; border-radius: 8px; object-fit: cover; border: 1px solid #333; }
 
-        /* Chat Message Box Area with Scroll */
         #chat-box { 
             flex: 1; 
             padding: 16px; 
@@ -81,24 +76,39 @@
         .msg.left { background: #202c33; align-self: flex-start; color: #e9edef; border-top-left-radius: 0; }
         .msg.right { background: #005c4b; align-self: flex-end; color: #e9edef; border-top-right-radius: 0; }
         
-        /* Incoming Call Popup Overlay */
         #incoming-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11,20,26,0.9); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
         .ring-btn { padding: 12px 24px; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; color: white; display: flex; align-items: center; gap: 8px; }
 
-        /* Input Area Footer Layout Fixes */
         .chat-footer { 
             background: #202c33; 
             padding: 10px 12px; 
             display: flex; 
             align-items: center; 
             gap: 8px; 
-            flex-shrink: 0; /* Keeps footer pinned layout at bottom */
+            flex-shrink: 0;
             box-sizing: border-box;
+            position: relative;
         }
-        .input-wrapper { flex: 1; background: #2a3942; border-radius: 24px; padding: 2px 12px; display: flex; align-items: center; }
+        .input-wrapper { flex: 1; background: #2a3942; border-radius: 24px; padding: 2px 12px; display: flex; align-items: center; gap: 8px; }
         input { width: 100%; padding: 10px 4px; border: none; background: transparent; color: white; outline: none; font-size: 15px; }
         
-        /* FIXED: Amplified click targets for mobile screens */
+        /* Emoji Button Container */
+        .emoji-toggle-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #8696a0; padding: 0; display: flex; align-items: center; }
+        
+        /* Floating Emoji Picker Style */
+        #picker-container {
+            display: none;
+            position: absolute;
+            bottom: 65px;
+            left: 12px;
+            z-index: 100;
+            width: 300px;
+            height: 350px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
         .send-btn { 
             width: 44px; 
             height: 44px; 
@@ -112,12 +122,12 @@
             align-items: center; 
             justify-content: center;
             flex-shrink: 0;
-            padding: 0;
         }
-        .send-btn:active { background: #008f72; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/picmo@5.8.4/dist/umd/index.js"></script>
 </head>
 <body>
 
@@ -154,11 +164,14 @@
         </div>
     </div>
 
+    <div id="picker-container"></div>
+
     <div class="chat-footer">
         <div class="input-wrapper">
+            <button class="emoji-toggle-btn" onclick="toggleEmojiPicker()" type="button">😀</button>
             <input type="text" id="message-input" placeholder="Type a message" onkeypress="handleKeyPress(event)" oninput="handleTyping(true)" onblur="handleTyping(false)">
         </div>
-        <button class="send-btn" id="send-button-element" onclick="sendMessage()" type="button">🕊️</button>
+        <button class="send-btn" onclick="sendMessage()" type="button">🕊️</button>
     </div>
 </div>
 
@@ -168,12 +181,39 @@
     
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
+    const pickerContainer = document.getElementById('picker-container');
     
     let localStream;
     let peer;
     let incomingSignal;
     let isVideoCall = false;
     let typingTimeout;
+
+    // 🌟 Initialize Emoji Picker
+    const picker = picmo.createPicker({
+        rootElement: pickerContainer,
+        theme: 'dark'
+    });
+
+    // 🌟 When an emoji is clicked, insert it into the input field
+    picker.addEventListener('emoji:select', event => {
+        messageInput.value += event.emoji;
+        messageInput.focus();
+    });
+
+    // 🌟 Open or Close Emoji Window
+    function toggleEmojiPicker() {
+        if (pickerContainer.style.display === 'block') {
+            pickerContainer.style.display = 'none';
+        } else {
+            pickerContainer.style.display = 'block';
+        }
+    }
+
+    // Hide emoji picker if user clicks inside message log view
+    chatBox.addEventListener('click', () => {
+        pickerContainer.style.display = 'none';
+    });
 
     // --- TEXT CHAT & TYPING ---
     socket.on('receive_message', (msg) => appendMessage(msg, 'left'));
@@ -192,7 +232,6 @@
         typingTimeout = setTimeout(() => socket.emit('typing', false), 2000);
     }
 
-    // FIXED: Formatted processing rules preventing submission faults
     function sendMessage() {
         const message = messageInput.value.trim();
         if(message !== "") {
@@ -200,7 +239,8 @@
             appendMessage(message, 'right');
             messageInput.value = "";
             socket.emit('typing', false);
-            messageInput.focus(); // Keeps keyboard open on mobile after click
+            pickerContainer.style.display = 'none'; // Closes emoji panel after sending
+            messageInput.focus();
         }
     }
 
