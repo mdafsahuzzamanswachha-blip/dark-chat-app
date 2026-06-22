@@ -9,7 +9,7 @@
             margin: 0; 
             padding: 0; 
             width: 100%; 
-            height: 100%; /* Fallback for older Android engines */
+            height: 100%; 
             overflow: hidden;
             background: #0b141a; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -51,13 +51,15 @@
             justify-content: space-between; 
             border-bottom: 1px solid #2f3b43; 
             flex-shrink: 0;
+            /* Prevent header text selection popup */
+            -webkit-user-select: none; user-select: none;
         }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .avatar { width: 38px; height: 38px; background: #687e8c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
         .user-status h3 { margin: 0; font-size: 15px; font-weight: 600; }
         .user-status span { font-size: 11px; color: #8696a0; }
         .header-buttons { display: flex; gap: 16px; }
-        .header-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #00a884; }
+        .header-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #00a884; -webkit-tap-highlight-color: transparent; }
 
         /* Main Chat View Container */
         #chat-view {
@@ -95,7 +97,19 @@
         }
         .input-wrapper { flex: 1; background: #2a3942; border-radius: 24px; padding: 2px 12px; display: flex; align-items: center; gap: 8px; }
         input { width: 100%; padding: 10px 4px; border: none; background: transparent; color: white; outline: none; font-size: 15px; }
-        .emoji-toggle-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #8696a0; padding: 0; display: flex; align-items: center; }
+        
+        .emoji-toggle-btn { 
+            background: none; 
+            border: none; 
+            font-size: 20px; 
+            cursor: pointer; 
+            color: #8696a0; 
+            padding: 0; 
+            display: flex; 
+            align-items: center;
+            -webkit-user-select: none; user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
         
         #picker-container {
             display: none;
@@ -110,6 +124,7 @@
             overflow: hidden;
         }
 
+        /* FIXED: Added user-select restrictions & tap highlights to stop copy-paste overlay */
         .send-btn { 
             width: 44px; 
             height: 44px; 
@@ -123,6 +138,10 @@
             align-items: center; 
             justify-content: center;
             flex-shrink: 0;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
         }
 
         /* FULLSCREEN WHATSAPP STYLE CALL SCREEN */
@@ -137,6 +156,7 @@
             justify-content: space-between;
             padding: 50px 20px;
             box-sizing: border-box;
+            -webkit-user-select: none; user-select: none;
         }
 
         .call-profile { text-align: center; margin-top: 20px; }
@@ -155,7 +175,7 @@
         #localVideo { position: absolute; top: 20px; right: 20px; width: 90px; height: 130px; object-fit: cover; border-radius: 8px; border: 1px solid #555; z-index: 10; }
 
         .call-action-bar { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; }
-        .call-ctrl-btn { width: 55px; height: 55px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; background: rgba(255,255,255,0.15); transition: 0.2s; }
+        .call-ctrl-btn { width: 55px; height: 55px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; background: rgba(255,255,255,0.15); transition: 0.2s; -webkit-tap-highlight-color: transparent; }
         .call-ctrl-btn:hover { background: rgba(255,255,255,0.25); }
         .btn-hangup { background: #ea0038; width: 65px; height: 65px; font-size: 24px; }
         
@@ -171,8 +191,9 @@
             align-items: center; 
             justify-content: center; 
             gap: 25px; 
+            -webkit-user-select: none; user-select: none;
         }
-        .ring-btn { padding: 14px 32px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 15px; color: white; display: flex; align-items: center; gap: 8px; }
+        .ring-btn { padding: 14px 32px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 15px; color: white; display: flex; align-items: center; gap: 8px; -webkit-tap-highlight-color: transparent; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
@@ -205,7 +226,7 @@
                 <button class="emoji-toggle-btn" onclick="toggleEmojiPicker()" type="button">😀</button>
                 <input type="text" id="message-input" placeholder="Type a message" onkeypress="handleKeyPress(event)" oninput="handleTyping(true)" onblur="handleTyping(false)">
             </div>
-            <button class="send-btn" onclick="sendMessage()" type="button">🕊️</button>
+            <button class="send-btn" onclick="sendMessage()" ontouchstart="handleTouchSend(event)" type="button">🕊️</button>
         </div>
     </div>
 
@@ -278,6 +299,7 @@
         clearTimeout(typingTimeout);
         typingTimeout = setTimeout(() => socket.emit('typing', false), 2000);
     }
+    
     function sendMessage() {
         const message = messageInput.value.trim();
         if(message !== "") {
@@ -289,7 +311,15 @@
             messageInput.focus();
         }
     }
+    
+    // FIXED: Mobile touch interceptor to prevent standard browser selection layout popups on submit
+    function handleTouchSend(e) {
+        e.preventDefault(); // Blocks the browser from trying to select text/showing menu
+        sendMessage();
+    }
+
     function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
+    
     function appendMessage(text, side) {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('msg', side);
@@ -412,7 +442,6 @@
         document.getElementById('cameraBtn').classList.remove('active-off');
     }
 
-    // 🌟 FIXED: Pure JS Viewport Height Fixer for older mobile browser engines 🌟
     function adjustMobileHeight() {
         const targetHeight = window.innerHeight;
         document.getElementById('mainAppWrap').style.height = targetHeight + 'px';
