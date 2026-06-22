@@ -2,14 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Sleek 1v1 Fullscreen Chat & Call</title>
     <style>
         html, body { 
             margin: 0; 
             padding: 0; 
             width: 100%; 
-            height: 100%; 
+            /* FIXED: Use fallback heights to handle mobile browser address bars safely */
+            height: 100vh;
+            height: -webkit-fill-available;
             overflow: hidden;
             background: #0b141a; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -25,6 +27,8 @@
         .app-container { 
             width: 100%; 
             height: 100%; 
+            /* FIXED: Ensures container fills mobile screen perfectly without breaking */
+            height: -webkit-fill-available;
             max-width: 450px; 
             background: #0b141a; 
             display: flex; 
@@ -65,6 +69,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            height: 100%;
         }
 
         #chat-box { 
@@ -90,6 +95,8 @@
             flex-shrink: 0;
             box-sizing: border-box;
             position: relative;
+            /* FIXED: Safeguard for newer iOS/Android bottom safe areas */
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
         }
         .input-wrapper { flex: 1; background: #2a3942; border-radius: 24px; padding: 2px 12px; display: flex; align-items: center; gap: 8px; }
         input { width: 100%; padding: 10px 4px; border: none; background: transparent; color: white; outline: none; font-size: 15px; }
@@ -101,8 +108,8 @@
             bottom: 65px;
             left: 12px;
             z-index: 100;
-            width: 300px;
-            height: 350px;
+            width: 280px;
+            height: 300px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             border-radius: 8px;
             overflow: hidden;
@@ -123,9 +130,9 @@
             flex-shrink: 0;
         }
 
-        /* 🌟 WHATSAPP STYLE FULLSCREEN CALL SCREEN 🌟 */
+        /* FULLSCREEN WHATSAPP STYLE CALL SCREEN */
         #fullscreen-call-screen {
-            display: none; /* Initially hidden */
+            display: none; 
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: linear-gradient(to bottom, #1e363a, #0b141a);
@@ -142,7 +149,6 @@
         .call-name { font-size: 24px; font-weight: 600; margin: 0 0 8px 0; }
         .call-status { font-size: 14px; color: #8696a0; margin: 0; }
 
-        /* Video Streams (Only visible during an approved Video Call, stacked layered layout) */
         .fullscreen-video-wrapper {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -153,16 +159,13 @@
         #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
         #localVideo { position: absolute; top: 20px; right: 20px; width: 90px; height: 130px; object-fit: cover; border-radius: 8px; border: 1px solid #555; z-index: 10; }
 
-        /* Call Control Bottom Bar */
         .call-action-bar { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; }
         .call-ctrl-btn { width: 55px; height: 55px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; background: rgba(255,255,255,0.15); transition: 0.2s; }
         .call-ctrl-btn:hover { background: rgba(255,255,255,0.25); }
         .btn-hangup { background: #ea0038; width: 65px; height: 65px; font-size: 24px; }
-        .btn-hangup:hover { background: #c2002e; }
         
         .active-off { background: rgba(234, 0, 56, 0.4) !important; color: #ff8fa3 !important; }
 
-        /* Ringing Popup Overlay (For Incoming Call Alert) */
         #incoming-overlay { 
             display: none; 
             position: absolute; 
@@ -258,7 +261,7 @@
     let micEnabled = true;
     let camEnabled = true;
 
-    // --- Emoji Picker Initialization ---
+    // --- Emoji Picker ---
     const picker = picmo.createPicker({ rootElement: pickerContainer, theme: 'dark' });
     picker.addEventListener('emoji:select', event => {
         messageInput.value += event.emoji;
@@ -300,7 +303,7 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- 🌟 WHATSAPP STYLE FULLSCREEN CALL LOGIC 🌟 ---
+    // --- CALL LOGIC ---
     async function getMedia(wantVideo) {
         if (!localStream) {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo });
@@ -311,8 +314,6 @@
 
     async function startCall(videoOption) {
         isVideoCall = videoOption;
-        
-        // 🌟 চ্যাট স্ক্রিন হাইড করে ফুল-স্ক্রিন কল উইন্ডো অন করা
         document.getElementById('chat-view').style.display = 'none';
         document.getElementById('fullscreen-call-screen').style.display = 'flex';
         document.getElementById('callDurationLabel').innerText = isVideoCall ? "Starting video call..." : "Starting voice call...";
@@ -345,8 +346,6 @@
 
     async function answerCall() {
         document.getElementById('incoming-overlay').style.display = 'none';
-        
-        // 🌟 চ্যাট স্ক্রিন হাইড করে ফুল-স্ক্রিন কল উইন্ডো অন করা
         document.getElementById('chat-view').style.display = 'none';
         document.getElementById('fullscreen-call-screen').style.display = 'flex';
         document.getElementById('callDurationLabel').innerText = "Connecting...";
@@ -374,7 +373,6 @@
 
     socket.on('call_accepted', (signal) => peer.signal(signal));
 
-    // 🎙️ Mic Mute/Unmute Function
     function toggleMute() {
         if (localStream) {
             micEnabled = !micEnabled;
@@ -385,7 +383,6 @@
         }
     }
 
-    // 📷 Camera On/Off Function
     function toggleCamera() {
         if (localStream && localStream.getVideoTracks().length > 0) {
             camEnabled = !camEnabled;
@@ -409,19 +406,21 @@
         
         document.getElementById('localVideo').srcObject = null;
         document.getElementById('remoteVideo').srcObject = null;
-        
-        // 🌟 কল কেটে গেলে কল স্ক্রিন হাইড করে আবার চ্যাট উইন্ডো ফিরিয়ে আনা
         document.getElementById('fullscreen-call-screen').style.display = 'none';
         document.getElementById('incoming-overlay').style.display = 'none';
         document.getElementById('chat-view').style.display = 'flex';
         
-        // Reset mute toggles state cleanly
         micEnabled = true; camEnabled = true;
         document.getElementById('muteBtn').innerText = "🎙️";
         document.getElementById('muteBtn').classList.remove('active-off');
         document.getElementById('cameraBtn').innerText = "📷";
         document.getElementById('cameraBtn').classList.remove('active-off');
     }
+
+    // FIXED: Form dynamic viewport sizing adjustments to lock elements against soft-keyboard shifting
+    window.addEventListener('resize', () => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
 </script>
 </body>
 </html>
