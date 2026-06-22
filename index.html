@@ -5,15 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sleek 1v1 Fullscreen Chat & Call</title>
     <style>
+        :root {
+            --bg-color: #0b141a;
+            --panel-bg: #202c33;
+            --input-bg: #2a3942;
+            --text-main: #e9edef;
+            --text-sub: #8696a0;
+            --msg-left: #202c33;
+            --msg-right: #005c4b;
+            --border-color: #2f3b43;
+            --primary: #00a884;
+        }
+
+        .light-theme {
+            --bg-color: #efeae2;
+            --panel-bg: #f0f2f5;
+            --input-bg: #ffffff;
+            --text-main: #111b21;
+            --text-sub: #667781;
+            --msg-left: #ffffff;
+            --msg-right: #d9fdd3;
+            --border-color: #e9edef;
+            --primary: #008069;
+        }
+
         html, body { 
             margin: 0; 
             padding: 0; 
             width: 100%; 
             height: 100%; 
             overflow: hidden;
-            background: #0b141a; 
+            background: var(--bg-color); 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            color: #e9edef;
+            color: var(--text-main);
+            transition: background 0.3s, color 0.3s;
         }
         
         body { 
@@ -25,8 +50,8 @@
         .app-container { 
             width: 100%; 
             height: 100%; 
-            max-width: 450px; 
-            background: #0b141a; 
+            max-width: 500px; 
+            background: var(--bg-color); 
             display: flex; 
             flex-direction: column; 
             position: relative; 
@@ -34,31 +59,31 @@
             box-sizing: border-box;
         }
         
-        @media (min-width: 451px) { 
+        @media (min-width: 480px) and (min-height: 700px) { 
             .app-container { 
-                height: 90vh; 
-                border-radius: 10px; 
-                border: 1px solid #222; 
+                height: 95vh; 
+                border-radius: 12px; 
+                border: 1px solid var(--border-color); 
             } 
         }
 
         /* Header Style */
         .chat-header { 
-            background: #202c33; 
+            background: var(--panel-bg); 
             padding: 10px 16px; 
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
-            border-bottom: 1px solid #2f3b43; 
+            border-bottom: 1px solid var(--border-color); 
             flex-shrink: 0;
             -webkit-user-select: none; user-select: none;
         }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 38px; height: 38px; background: #687e8c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
+        .user-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .avatar { width: 38px; height: 38px; background: #687e8c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; overflow: hidden; background-size: cover; background-position: center; }
         .user-status h3 { margin: 0; font-size: 15px; font-weight: 600; }
-        .user-status span { font-size: 11px; color: #8696a0; }
-        .header-buttons { display: flex; gap: 16px; }
-        .header-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #00a884; -webkit-tap-highlight-color: transparent; }
+        .user-status span { font-size: 11px; color: var(--text-sub); }
+        .header-buttons { display: flex; gap: 12px; align-items: center; }
+        .header-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: var(--primary); -webkit-tap-highlight-color: transparent; }
 
         /* Main Chat View Container */
         #chat-view {
@@ -80,29 +105,33 @@
             background-image: linear-gradient(rgba(11,20,26,0.95), rgba(11,20,26,0.95)), url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
             background-size: contain; 
         }
+        .light-theme #chat-box {
+            background-image: linear-gradient(rgba(239,234,226,0.95), rgba(239,234,226,0.95)), url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
+        }
+        
         .msg { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
-        .msg.left { background: #202c33; align-self: flex-start; color: #e9edef; border-top-left-radius: 0; }
-        .msg.right { background: #005c4b; align-self: flex-end; color: #e9edef; border-top-right-radius: 0; }
+        .msg.left { background: var(--msg-left); align-self: flex-start; color: var(--text-main); border-top-left-radius: 0; }
+        .msg.right { background: var(--msg-right); align-self: flex-end; color: var(--text-main); border-top-right-radius: 0; }
         
         .chat-footer { 
-            background: #202c33; 
+            background: var(--panel-bg); 
             padding: 10px 12px; 
             display: flex; 
             align-items: center; 
-            gap: 12px; /* Increased gap to prevent mis-clicks */
+            gap: 12px; 
             flex-shrink: 0;
             box-sizing: border-box;
             position: relative;
         }
-        .input-wrapper { flex: 1; background: #2a3942; border-radius: 24px; padding: 2px 12px; display: flex; align-items: center; gap: 8px; }
-        input { width: 100%; padding: 10px 4px; border: none; background: transparent; color: white; outline: none; font-size: 15px; }
+        .input-wrapper { flex: 1; background: var(--input-bg); border-radius: 24px; padding: 2px 12px; display: flex; align-items: center; gap: 8px; }
+        input { width: 100%; padding: 10px 4px; border: none; background: transparent; color: var(--text-main); outline: none; font-size: 15px; }
         
         .emoji-toggle-btn { 
             background: none; 
             border: none; 
             font-size: 20px; 
             cursor: pointer; 
-            color: #8696a0; 
+            color: var(--text-sub); 
             padding: 0; 
             display: flex; 
             align-items: center;
@@ -123,12 +152,11 @@
             overflow: hidden;
         }
 
-        /* Pure CSS fix to avoid browser highlights and text overlays */
         .send-btn { 
             width: 44px; 
             height: 44px; 
             border-radius: 50%; 
-            background: #00a884; 
+            background: var(--primary); 
             border: none; 
             color: white; 
             font-size: 16px; 
@@ -138,19 +166,11 @@
             justify-content: center;
             flex-shrink: 0;
             outline: none;
-            
-            /* Strict CSS layer properties to override copy/paste menu overlaps */
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            -webkit-user-select: none; user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-        .send-btn:active {
-            background: #008f72;
-        }
 
-        /* FULLSCREEN WHATSAPP STYLE CALL SCREEN */
+        /* CALL SCREEN */
         #fullscreen-call-screen {
             display: none; 
             position: absolute;
@@ -166,8 +186,8 @@
         }
 
         .call-profile { text-align: center; margin-top: 20px; }
-        .call-avatar { width: 100px; height: 100px; background: #687e8c; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .call-name { font-size: 24px; font-weight: 600; margin: 0 0 8px 0; }
+        .call-avatar { width: 100px; height: 100px; background: #687e8c; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); overflow: hidden; background-size: cover; background-position: center; }
+        .call-name { font-size: 24px; font-weight: 600; margin: 0 0 8px 0; color: white; }
         .call-status { font-size: 14px; color: #8696a0; margin: 0; }
 
         .fullscreen-video-wrapper {
@@ -180,12 +200,11 @@
         #remoteVideo { width: 100%; height: 100%; object-fit: cover; }
         #localVideo { position: absolute; top: 20px; right: 20px; width: 90px; height: 130px; object-fit: cover; border-radius: 8px; border: 1px solid #555; z-index: 10; }
 
-        .call-action-bar { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; }
-        .call-ctrl-btn { width: 55px; height: 55px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; background: rgba(255,255,255,0.15); transition: 0.2s; -webkit-tap-highlight-color: transparent; }
-        .call-ctrl-btn:hover { background: rgba(255,255,255,0.25); }
-        .btn-hangup { background: #ea0038; width: 65px; height: 65px; font-size: 24px; }
-        
+        .call-action-bar { display: flex; gap: 15px; align-items: center; margin-bottom: 20px; }
+        .call-ctrl-btn { width: 52px; height: 52px; border-radius: 50%; border: none; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; background: rgba(255,255,255,0.15); transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        .btn-hangup { background: #ea0038; width: 62px; height: 62px; font-size: 22px; }
         .active-off { background: rgba(234, 0, 56, 0.4) !important; color: #ff8fa3 !important; }
+        .active-on { background: #00a884 !important; color: white !important; }
 
         #incoming-overlay { 
             display: none; 
@@ -200,6 +219,9 @@
             -webkit-user-select: none; user-select: none;
         }
         .ring-btn { padding: 14px 32px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 15px; color: white; display: flex; align-items: center; gap: 8px; -webkit-tap-highlight-color: transparent; }
+        
+        /* Hidden input file click trigger */
+        #avatar-input { display: none; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
@@ -211,14 +233,16 @@
     
     <div id="chat-view">
         <div class="chat-header">
-            <div class="user-info">
-                <div class="avatar">C</div>
+            <div class="user-info" onclick="triggerProfileSetup()">
+                <div class="avatar" id="main-avatar">C</div>
+                <input type="file" id="avatar-input" accept="image/*" onchange="loadAvatar(event)">
                 <div class="user-status">
                     <h3 id="header-title">Connected Peer</h3>
                     <span id="typing-status">online</span>
                 </div>
             </div>
             <div class="header-buttons">
+                <button class="header-btn" onclick="toggleTheme()" title="Toggle Theme">🌓</button>
                 <button class="header-btn" onclick="startCall(false)">📞</button>
                 <button class="header-btn" onclick="startCall(true)">📹</button>
             </div>
@@ -243,20 +267,21 @@
         </div>
 
         <div class="call-profile" id="callProfileDetails">
-            <div class="call-avatar">C</div>
-            <h2 class="call-name">Connected Peer</h2>
+            <div class="call-avatar" id="call-screen-avatar">C</div>
+            <h2 class="call-name" id="call-screen-name">Connected Peer</h2>
             <p class="call-status" id="callDurationLabel">Calling...</p>
         </div>
 
         <div class="call-action-bar">
             <button class="call-ctrl-btn" id="muteBtn" onclick="toggleMute()">🎙️</button>
+            <button class="call-ctrl-btn" id="speakerBtn" onclick="toggleSpeaker()">🔊</button>
             <button class="call-ctrl-btn btn-hangup" onclick="hangupCall()">🛑</button>
             <button class="call-ctrl-btn" id="cameraBtn" onclick="toggleCamera()">📷</button>
         </div>
     </div>
 
     <div id="incoming-overlay">
-        <div class="call-avatar">C</div>
+        <div class="call-avatar" id="incoming-avatar">C</div>
         <h2 id="ring-label" style="color:white; margin:0; font-size: 22px;">Incoming Call...</h2>
         <div style="display:flex; gap:20px; margin-top: 10px;">
             <button class="ring-btn" onclick="answerCall()" style="background:#00a884;">🟢 Answer</button>
@@ -282,6 +307,58 @@
     
     let micEnabled = true;
     let camEnabled = true;
+    let speakerEnabled = true;
+
+    // --- Profile Customization (Local UI state) ---
+    function triggerProfileSetup() {
+        const newName = prompt("Enter peer display name:", document.getElementById('header-title').innerText);
+        if(newName && newName.trim() !== "") {
+            const updatedName = newName.trim();
+            document.getElementById('header-title').innerText = updatedName;
+            document.getElementById('call-screen-name').innerText = updatedName;
+            document.getElementById('main-avatar').innerText = updatedName.charAt(0).toUpperCase();
+            document.getElementById('call-screen-avatar').innerText = updatedName.charAt(0).toUpperCase();
+            document.getElementById('incoming-avatar').innerText = updatedName.charAt(0).toUpperCase();
+        }
+        // Ask if they want to upload photo
+        if(confirm("Do you want to change the profile photo?")) {
+            document.getElementById('avatar-input').click();
+        }
+    }
+
+    function loadAvatar(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgUrl = e.target.result;
+                const avatars = ['main-avatar', 'call-screen-avatar', 'incoming-avatar'];
+                avatars.forEach(id => {
+                    const el = document.getElementById(id);
+                    el.style.backgroundImage = `url('${imgUrl}')`;
+                    el.innerText = ''; // clear initial letter
+                });
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // --- Theme Switcher ---
+    function toggleTheme() {
+        document.body.classList.toggle('light-theme');
+    }
+
+    // --- Speaker Output Control Toggle ---
+    function toggleSpeaker() {
+        speakerEnabled = !speakerEnabled;
+        const remoteVideo = document.getElementById('remoteVideo');
+        if(remoteVideo) {
+            remoteVideo.muted = !speakerEnabled; // soft control on audio element track state
+        }
+        const btn = document.getElementById('speakerBtn');
+        btn.innerText = speakerEnabled ? "🔊" : "🔈";
+        btn.classList.toggle('active-off', !speakerEnabled);
+    }
 
     // --- Emoji Picker ---
     const picker = picmo.createPicker({ rootElement: pickerContainer, theme: 'dark' });
@@ -358,6 +435,7 @@
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
+            document.getElementById('remoteVideo').muted = !speakerEnabled;
             document.getElementById('callDurationLabel').innerText = "Active Call";
         });
     }
@@ -390,6 +468,7 @@
 
         peer.on('stream', (remoteStream) => {
             document.getElementById('remoteVideo').srcObject = remoteStream;
+            document.getElementById('remoteVideo').muted = !speakerEnabled;
             document.getElementById('callDurationLabel').innerText = "Active Call";
         });
 
@@ -435,11 +514,13 @@
         document.getElementById('incoming-overlay').style.display = 'none';
         document.getElementById('chat-view').style.display = 'flex';
         
-        micEnabled = true; camEnabled = true;
+        micEnabled = true; camEnabled = true; speakerEnabled = true;
         document.getElementById('muteBtn').innerText = "🎙️";
         document.getElementById('muteBtn').classList.remove('active-off');
         document.getElementById('cameraBtn').innerText = "📷";
         document.getElementById('cameraBtn').classList.remove('active-off');
+        document.getElementById('speakerBtn').innerText = "🔊";
+        document.getElementById('speakerBtn').classList.remove('active-off');
     }
 
     function adjustMobileHeight() {
