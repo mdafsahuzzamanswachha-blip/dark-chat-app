@@ -220,7 +220,6 @@
         }
         .ring-btn { padding: 14px 32px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 15px; color: white; display: flex; align-items: center; gap: 8px; -webkit-tap-highlight-color: transparent; }
         
-        /* Hidden input file click trigger */
         #avatar-input { display: none; }
     </style>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -309,7 +308,7 @@
     let camEnabled = true;
     let speakerEnabled = true;
 
-    // --- Profile Customization (Local UI state) ---
+    // --- Profile Customization ---
     function triggerProfileSetup() {
         const newName = prompt("Enter peer display name:", document.getElementById('header-title').innerText);
         if(newName && newName.trim() !== "") {
@@ -320,7 +319,6 @@
             document.getElementById('call-screen-avatar').innerText = updatedName.charAt(0).toUpperCase();
             document.getElementById('incoming-avatar').innerText = updatedName.charAt(0).toUpperCase();
         }
-        // Ask if they want to upload photo
         if(confirm("Do you want to change the profile photo?")) {
             document.getElementById('avatar-input').click();
         }
@@ -336,7 +334,7 @@
                 avatars.forEach(id => {
                     const el = document.getElementById(id);
                     el.style.backgroundImage = `url('${imgUrl}')`;
-                    el.innerText = ''; // clear initial letter
+                    el.innerText = '';
                 });
             }
             reader.readAsDataURL(file);
@@ -353,7 +351,7 @@
         speakerEnabled = !speakerEnabled;
         const remoteVideo = document.getElementById('remoteVideo');
         if(remoteVideo) {
-            remoteVideo.muted = !speakerEnabled; // soft control on audio element track state
+            remoteVideo.muted = !speakerEnabled;
         }
         const btn = document.getElementById('speakerBtn');
         btn.innerText = speakerEnabled ? "🔊" : "🔈";
@@ -371,11 +369,21 @@
     }
     chatBox.addEventListener('click', () => pickerContainer.style.display = 'none');
 
-    // --- TEXT CHAT & TYPING ---
+    // --- TEXT CHAT & TYPING WITH DATABASE HISTORY ---
+    socket.on('chat_history', (history) => {
+        chatBox.innerHTML = ""; 
+        history.forEach(msg => {
+            const side = (msg.sender === socket.id) ? 'right' : 'left';
+            appendMessage(msg.text, side);
+        });
+    });
+
     socket.on('receive_message', (msg) => appendMessage(msg, 'left'));
+    
     socket.on('user_typing', (isTyping) => {
         document.getElementById('typing-status').innerText = isTyping ? "typing..." : "online";
     });
+    
     function handleTyping(isTyping) {
         if (!isTyping) { socket.emit('typing', false); return; }
         socket.emit('typing', true);
@@ -387,7 +395,7 @@
         const message = messageInput.value.trim();
         if(message !== "") {
             socket.emit('send_message', message);
-            appendMessage(message, 'right');
+            appendMessage(message, 'right'); 
             messageInput.value = "";
             socket.emit('typing', false);
             pickerContainer.style.display = 'none';
