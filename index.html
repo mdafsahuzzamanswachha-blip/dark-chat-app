@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sleek 1v1 Fullscreen Chat & Call</title>
+    <title>Instant 1v1 Chat & Call</title>
     <style>
         :root {
             --bg-color: #0b141a;
@@ -67,7 +67,6 @@
             } 
         }
 
-        /* Header Style */
         .chat-header { 
             background: var(--panel-bg); 
             padding: 10px 16px; 
@@ -84,7 +83,6 @@
         .header-buttons { display: flex; gap: 12px; align-items: center; }
         .header-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: var(--primary); -webkit-tap-highlight-color: transparent; }
 
-        /* Main Chat View Container */
         #chat-view {
             flex: 1;
             display: flex;
@@ -273,7 +271,6 @@
     let camEnabled = true;
     let speakerEnabled = true;
 
-    // --- Profile Customization ---
     function triggerProfileSetup() {
         const newName = prompt("Enter peer display name:", document.getElementById('header-title').innerText);
         if(newName && newName.trim() !== "") {
@@ -308,12 +305,10 @@
         }
     }
 
-    // --- Theme Switcher ---
     function toggleTheme() {
         document.body.classList.toggle('light-theme');
     }
 
-    // --- Speaker Output Control Toggle ---
     function toggleSpeaker() {
         speakerEnabled = !speakerEnabled;
         const remoteVideo = document.getElementById('remoteVideo');
@@ -327,17 +322,7 @@
         }
     }
 
-    // --- TEXT CHAT & TYPING WITH DATABASE HISTORY ---
-    socket.on('chat_history', (history) => {
-        if(chatBox) {
-            chatBox.innerHTML = ""; 
-            history.forEach(msg => {
-                const side = (msg.sender === socket.id) ? 'right' : 'left';
-                appendMessage(msg.text, side);
-            });
-        }
-    });
-
+    // --- REMOVED DATABASE CHAT HISTORY FOR INSTANT CONNECTION ---
     socket.on('receive_message', (msg) => appendMessage(msg, 'left'));
     
     socket.on('user_typing', (isTyping) => {
@@ -374,7 +359,6 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- CALL LOGIC ---
     async function getMedia(wantVideo) {
         if (!localStream) {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo });
