@@ -73,13 +73,13 @@
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
-            border-bottom: 1px solid var(--border-color); 
+            border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
         }
         .user-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .avatar { width: 38px; height: 38px; background: #687e8c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; overflow: hidden; background-size: cover; background-position: center; }
         .user-status h3 { margin: 0; font-size: 15px; font-weight: 600; }
-        .user-status span { font-size: 11px; color: var(--text-sub); }
+        .user-status span { font-size: 11px; color: var(--text-sub); transition: color 0.2s; }
         .header-buttons { display: flex; gap: 12px; align-items: center; }
         .header-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: var(--primary); -webkit-tap-highlight-color: transparent; }
 
@@ -203,7 +203,7 @@
                 <input type="file" id="avatar-input" accept="image/*" onchange="loadAvatar(event)">
                 <div class="user-status">
                     <h3 id="header-title">Connected Peer</h3>
-                    <span id="typing-status">online</span>
+                    <span id="typing-status">offline</span>
                 </div>
             </div>
             <div class="header-buttons">
@@ -260,12 +260,14 @@
     
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
+    const typingStatusEl = document.getElementById('typing-status');
     
     let localStream;
     let peer;
     let incomingSignal;
     let isVideoCall = false;
     let typingTimeout;
+    let currentOnlineState = "offline"; // বর্তমান ইউজার কাউন্ট স্ট্যাটাস ট্র্যাক রাখার জন্য
     
     let micEnabled = true;
     let camEnabled = true;
@@ -322,15 +324,33 @@
         }
     }
 
-    // --- REMOVED DATABASE CHAT HISTORY FOR INSTANT CONNECTION ---
+    // ব্যাকএন্ড রুম কাউন্ট ইভেন্ট হ্যান্ডলিং লজিক
+    socket.on('user_count_update', (count) => {
+        if(count >= 2) {
+            currentOnlineState = "online";
+            if(typingStatusEl) typingStatusEl.innerText = "online";
+        } else {
+            currentOnlineState = "offline";
+            if(typingStatusEl) typingStatusEl.innerText = "offline";
+        }
+    });
+
     socket.on('receive_message', (msg) => appendMessage(msg, 'left'));
     
     socket.on('user_typing', (isTyping) => {
-        const el = document.getElementById('typing-status');
-        if(el) el.innerText = isTyping ? "typing..." : "online";
+        if(typingStatusEl) {
+            if(isTyping) {
+                typingStatusEl.innerText = "typing...";
+                typingStatusEl.style.color = "var(--primary)";
+            } else {
+                typingStatusEl.innerText = currentOnlineState;
+                typingStatusEl.style.color = "var(--text-sub)";
+            }
+        }
     });
     
     function handleTyping(isTyping) {
+        if(!socket) return;
         if (!isTyping) { socket.emit('typing', false); return; }
         socket.emit('typing', true);
         clearTimeout(typingTimeout);
@@ -390,7 +410,7 @@
                     remoteVideo.srcObject = remoteStream;
                     remoteVideo.muted = !speakerEnabled;
                 }
-                document.getElementById('callDurationLabel').innerText = "Active Call";
+                document.getElementById('callDurationLabel').innerText = isVideoCall ? "Active Video Call" : "Active Voice Call";
             });
         } catch(err) {
             alert("Media/Permission error: " + err.message);
@@ -427,7 +447,7 @@
                     remoteVideo.srcObject = remoteStream;
                     remoteVideo.muted = !speakerEnabled;
                 }
-                document.getElementById('callDurationLabel').innerText = "Active Call";
+                document.getElementById('callDurationLabel').innerText = isVideoCall ? "Active Video Call" : "Active Voice Call";
             });
 
             peer.signal(incomingSignal);
