@@ -267,11 +267,22 @@
     let incomingSignal;
     let isVideoCall = false;
     let typingTimeout;
-    let currentOnlineState = "offline"; // বর্তমান ইউজার কাউন্ট স্ট্যাটাস ট্র্যাক রাখার জন্য
+    let currentOnlineState = "offline";
     
     let micEnabled = true;
     let camEnabled = true;
     let speakerEnabled = true;
+
+    // গ্লোবাল STUN সার্ভার কনফিগারেশন (নেটওয়ার্ক ফায়ারওয়াল বাইপাস করার জন্য)
+    const peerConfig = {
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        }
+    };
 
     function triggerProfileSetup() {
         const newName = prompt("Enter peer display name:", document.getElementById('header-title').innerText);
@@ -324,7 +335,6 @@
         }
     }
 
-    // ব্যাকএন্ড রুম কাউন্ট ইভেন্ট হ্যান্ডলিং লজিক
     socket.on('user_count_update', (count) => {
         if(count >= 2) {
             currentOnlineState = "online";
@@ -398,7 +408,14 @@
         
         try {
             const stream = await getMedia(isVideoCall);
-            peer = new SimplePeer({ initiator: true, trickle: false, stream: stream });
+            
+            // STUN সার্ভার কনফিগারেশন যোগ করা হয়েছে ক্রসবর্ডার নেটওয়ার্ক পাসের জন্য
+            peer = new SimplePeer({ 
+                initiator: true, 
+                trickle: false, 
+                stream: stream,
+                config: peerConfig.config
+            });
 
             peer.on('signal', (data) => {
                 socket.emit('call_user', { signal: data, isVideo: isVideoCall });
@@ -435,7 +452,14 @@
         
         try {
             const stream = await getMedia(isVideoCall);
-            peer = new SimplePeer({ initiator: false, trickle: false, stream: stream });
+            
+            // STUN সার্ভার কনফিগারেশন এখানেও অ্যাড করা হয়েছে রিমোট কানেকশনের জন্য
+            peer = new SimplePeer({ 
+                initiator: false, 
+                trickle: false, 
+                stream: stream,
+                config: peerConfig.config
+            });
 
             peer.on('signal', (data) => {
                 socket.emit('answer_call', { signal: data });
