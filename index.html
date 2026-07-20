@@ -247,12 +247,13 @@
       let incomingSignalData = null;
 
       function appendMessage({ from='me', fromName=null, text='', attachment=null, ts=Date.now() }){
+        const isMe = (from === 'me' || from === socket.id);
         const el = document.createElement('div');
-        el.className = 'msg ' + (from === 'me' ? 'right' : 'left');
+        el.className = 'msg ' + (isMe ? 'right' : 'left');
         
         const meta = document.createElement('div');
         meta.className = 'meta';
-        meta.textContent = `${from === 'me' ? 'You' : (fromName || 'Peer')} • ${new Date(ts).toLocaleTimeString()}`;
+        meta.textContent = `${isMe ? 'You' : (fromName || 'Peer')} • ${new Date(ts).toLocaleTimeString()}`;
         el.appendChild(meta);
 
         if(text){
@@ -391,8 +392,8 @@
 
       socket.on('receive_message', (payload) => {
         appendMessage({
-          from: payload.from,
-          fromName: payload.fromName,
+          from: payload.from === socket.id ? 'me' : payload.from,
+          fromName: payload.fromName || 'Peer',
           text: payload.text,
           attachment: payload.attachment,
           ts: payload.ts
