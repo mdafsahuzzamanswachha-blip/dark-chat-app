@@ -1,0 +1,87 @@
+/* style.css - Aurora SnapChat inspired styles */
+:root{
+  --bg:#04060a;
+  --panel: rgba(255,255,255,0.03);
+  --glass: rgba(255,255,255,0.02);
+  --neon:#00ff9d;
+  --cyan:#00e5ff;
+  --purple:#9b7bff;
+  --text:#e6f7ff;
+  --muted:#88a6b8;
+  --radius:14px;
+  --glow: 0 8px 40px rgba(0,255,157,0.08);
+  --glass-blur:10px;
+}
+
+*{box-sizing:border-box}
+html,body,#app{height:100%;margin:0;background:
+  radial-gradient(1200px 600px at 10% 10%, rgba(155,123,255,0.06), transparent 10%),
+  radial-gradient(800px 500px at 90% 80%, rgba(0,229,255,0.04), transparent 10%),
+  var(--bg);
+color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+
+/* Topbar */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-radius:12px;margin:16px;backdrop-filter:blur(var(--glass-blur));background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));border:1px solid rgba(255,255,255,0.03)}
+.brand{font-weight:700;letter-spacing:0.4px}
+.status{color:var(--muted)}
+
+/* Layout */
+.main{display:flex;gap:14px;padding:12px;height:calc(100% - 88px)}
+.left-panel{width:260px;min-width:200px;display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:12px}
+.chat-panel{flex:1;display:flex;flex-direction:column;border-radius:12px;padding:12px;min-width:0}
+
+/* glass style */
+.glass{backdrop-filter:blur(var(--glass-blur));background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));border:1px solid rgba(255,255,255,0.03);box-shadow:var(--glow)}
+
+/* profile */
+.me{display:flex;gap:12px;align-items:center;padding:6px}
+.avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));border:1px solid rgba(255,255,255,0.03);font-weight:700}
+.avatar.large{width:92px;height:92px;font-size:20px}
+.meta .name{font-weight:600}
+.meta .sub{font-size:13px;color:var(--muted)}
+
+/* controls */
+.actions{display:flex;gap:8px;flex-wrap:wrap;padding:6px}
+.icon-btn{background:transparent;border:none;color:var(--neon);cursor:pointer;padding:8px;border-radius:10px}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text);cursor:pointer}
+.btn.neon{background:linear-gradient(90deg,var(--neon),var(--cyan));color:#001018;font-weight:700;box-shadow:0 6px 26px rgba(0,255,157,0.08)}
+
+/* snap area */
+.snaps-card{display:flex;flex-direction:column;gap:8px;padding:10px;min-height:220px;align-items:center}
+#snapVideo{width:100%;height:160px;border-radius:10px;background:#000;object-fit:cover}
+
+/* chat box */
+.chat-box{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px;position:relative}
+.chat-box:empty::before{content:attr(data-empty);color:var(--muted);position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);opacity:0.7}
+
+/* messages */
+.msg{max-width:78%;padding:8px 12px;border-radius:12px;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.02)}
+.msg.left{align-self:flex-start;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02))}
+.msg.right{align-self:flex-end;background:linear-gradient(180deg, rgba(0,255,157,0.05), rgba(0,255,157,0.02));border:1px solid rgba(0,255,157,0.08)}
+.msg img{max-width:320px;border-radius:10px;display:block}
+
+/* composer */
+.composer{display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid rgba(255,255,255,0.02)}
+#messageInput{flex:1;padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text)}
+.send-btn{width:52px;height:52px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--neon),var(--cyan));color:#001018;font-weight:700;cursor:pointer}
+
+/* call overlay */
+.call-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:60;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.75))}
+.call-overlay.hidden{display:none}
+.call-card{width:100%;max-width:920px;padding:20px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.call-videos{position:relative;width:100%;height:420px;background:#001018;border-radius:12px;overflow:hidden}
+.call-videos video{width:100%;height:100%;object-fit:cover}
+.call-videos .local-small{position:absolute;right:12px;bottom:12px;width:140px;height:180px;border-radius:10px;border:1px solid rgba(255,255,255,0.04)}
+.call-actions{display:flex;gap:12px;align-items:center}
+.ctrl{width:68px;height:68px;border-radius:999px;border:none;background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));display:inline-flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer}
+.ctrl.danger{background:linear-gradient(90deg,#ff5b6f,#ea0038);color:#fff}
+
+/* incoming */
+.incoming.hidden{display:none}
+
+@media (max-width:860px){
+  .main{flex-direction:column;padding:10px}
+  .left-panel{width:100%;display:flex;flex-direction:row;align-items:flex-start}
+  .chat-panel{width:100%}
+  .call-videos{height:60vh}
+}
