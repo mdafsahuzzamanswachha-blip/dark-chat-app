@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Aurora Snap — Dark Chat</title>
+  <title>Dark Chat</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
@@ -64,7 +64,18 @@
       border-radius: 12px;
       flex-shrink: 0;
     }
-    .brand{font-weight:700; letter-spacing:0.4px}
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    .brand img {
+      height: 32px;
+      width: auto;
+      object-fit: contain;
+    }
     .status{color:var(--muted); font-weight: 600;}
 
     /* Main Layout */
@@ -224,7 +235,10 @@
 <body>
   <div id="app">
     <header class="topbar glass">
-      <div class="brand">Aurora Snap</div>
+      <div class="brand">
+        <img src="https://dcassetcdn.com/design_img/2312077/501322/501322_12084041_2312077_9b8c94a4_image.png" alt="Logo">
+        <span>Dark Chat</span>
+      </div>
       <div style="display: flex; gap: 10px; align-items: center;">
         <div id="status" class="status">connecting...</div>
         <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">🌓</button>
