@@ -56,7 +56,7 @@
       box-shadow: var(--glow);
     }
 
-    /* Topbar with Bigger Logo */
+    /* Topbar */
     .topbar {
       display: flex;
       justify-content: space-between;
@@ -73,7 +73,7 @@
       letter-spacing: 0.4px;
     }
     .brand img {
-      height: 42px; /* লোগোর সাইজ আগের ৩২px থেকে বাড়িয়ে ৪২px করা হয়েছে */
+      height: 42px;
       width: auto;
       object-fit: contain;
       border-radius: 6px;
@@ -123,7 +123,7 @@
     #snapVideo { width: 100%; height: 120px; border-radius: 8px; background: #000; object-fit: cover; }
     #snapCanvas { width: 100%; border-radius: 8px; }
 
-    /* Center (Chat Section) */
+    /* Center (Chat Section with Custom Background) */
     .center {
       flex: 1;
       display: flex;
@@ -139,12 +139,19 @@
     .chat-box {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 10px;
       position: relative;
       min-height: 0;
+      
+      /* 🖼️ আপনার দেওয়া ছবি চ্যাট ব্যাকগ্রাউন্ডে ফুল স্ক্রিন ফিক্সড */
+      background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('https://scontent.fjsr11-1.fna.fbcdn.net/v/t39.30808-6/751578503_122138143845152080_3128518087543364641_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1536&ctp=p526x296&_nc_cat=104&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=127cfc&_nc_ohc=zlsAc2rZrhkQ7kNvwHWYpAm&_nc_oc=AdrlAU2VjMXqZQ3uqcwT9sWC2lVgd0DjDVIheN2TsjGmfqkB8zkxlrSewqainoo8adM&_nc_zt=23&_nc_ht=scontent.fjsr11-1.fna&_nc_gid=DwA20j-CdEe0IHUXnT4t2g&_nc_ss=7b2a8&oh=00_AQAjD2X5hEZ5H-F1jxLVoLiOuEiRVnFI4UmJa6sCp3AN3Q&oe=6A642406');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 10px;
     }
     .chat-box:empty::before {
       content: attr(data-empty);
@@ -159,17 +166,17 @@
       padding: 8px 12px;
       border-radius: 12px;
       backdrop-filter: blur(6px);
-      border: 1px solid rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
       word-break: break-word;
     }
     .msg.left {
       align-self: flex-start;
-      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.02));
+      background: rgba(15, 23, 42, 0.75);
     }
     .msg.right {
       align-self: flex-end;
-      background: linear-gradient(180deg, rgba(0,255,157,0.12), rgba(0,255,157,0.02));
-      border: 1px solid rgba(0,255,157,0.2);
+      background: rgba(0, 255, 157, 0.18);
+      border: 1px solid rgba(0,255,157,0.3);
     }
     .msg img { max-width: 100%; border-radius: 8px; display: block; margin-top: 4px; }
     .msg .meta { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
@@ -189,7 +196,7 @@
       padding: 8px 14px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(0,0,0,0.2);
+      background: rgba(0,0,0,0.4);
       color: var(--text);
       outline: none;
       font-size: 14px;
@@ -244,7 +251,7 @@
         z-index: 50;
         background: #000;
       }
-      .chat-box { padding: 4px; }
+      .chat-box { padding: 8px; }
       #emojiPickerContainer {
         left: 0;
         right: 0;
