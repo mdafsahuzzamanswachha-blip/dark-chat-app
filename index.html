@@ -206,17 +206,13 @@
     const peerConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:openrelay.metered.ca:80' },
-        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
+        { urls: 'stun:stun1.l.google.com:19302' }
       ]
     };
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Direct Backend Connection
       const socket = io("https://dark-chat-backend-2v8y.onrender.com");
 
-      // DOM Elements
       const statusEl = document.getElementById('status');
       const sendBtn = document.getElementById('sendBtn');
       const messageInput = document.getElementById('messageInput');
@@ -293,7 +289,7 @@
         });
       }
 
-      // 1. Messaging Controls
+      // Send message
       function sendMessage(){
         const txt = (messageInput.value || '').trim();
         if(!txt) return;
@@ -311,7 +307,7 @@
         }
       });
 
-      // 2. Attachments
+      // File attachment
       attachBtn.addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
@@ -323,7 +319,7 @@
         fileInput.value = '';
       });
 
-      // 3. Snap Camera
+      // Snap Camera
       const toggleSnap = async () => {
         if(snapArea.style.display === 'flex'){
           closeSnap();
@@ -336,7 +332,7 @@
           snapVideo.play();
           snapArea._stream = s;
         }catch(err){
-          alert('Camera permission error: ' + err.message);
+          alert('Camera error: ' + err.message);
           snapArea.style.display = 'none';
         }
       };
@@ -378,11 +374,10 @@
 
       themeToggle.addEventListener('click', () => document.documentElement.classList.toggle('light'));
 
-      // 4. Socket Event Listeners
+      // Socket Events
       socket.on('connect', () => {
         statusEl.textContent = 'online';
         statusEl.style.color = '#00ff9d';
-        socket.emit('set_username', { name: 'User-' + socket.id.slice(0, 4) });
       });
 
       socket.on('disconnect', () => {
@@ -390,20 +385,21 @@
         statusEl.style.color = '#ff5b6f';
       });
 
-      // Broadcast Message Handling (Fixes message receiving issue)
-      socket.on('broadcast_message', (payload) => {
-        if(payload.from !== socket.id){
-          appendMessage({
-            from: payload.from,
-            fromName: payload.fromName,
-            text: payload.text,
-            attachment: payload.attachment,
-            ts: payload.ts
-          });
-        }
+      socket.on('user_count_update', (count) => {
+        document.getElementById('myStatus').textContent = `Online: ${count}`;
       });
 
-      // 5. WebRTC Video Call Logic
+      socket.on('receive_message', (payload) => {
+        appendMessage({
+          from: payload.from,
+          fromName: payload.fromName,
+          text: payload.text,
+          attachment: payload.attachment,
+          ts: payload.ts
+        });
+      });
+
+      // Video Call Logic
       startCallBtn.addEventListener('click', async () => {
         if(isCalling) return;
         try{
@@ -414,7 +410,7 @@
           isCalling = true;
           startPeer(true);
         }catch(err){
-          alert('Mic & Camera permissions required for calls: ' + err.message);
+          alert('Camera/Mic permission error: ' + err.message);
         }
       });
 
@@ -436,25 +432,25 @@
             peer.signal(incomingSignalData);
           }
         }catch(err){
-          alert('Could not access Camera/Mic to answer: ' + err.message);
+          alert('Camera/Mic error: ' + err.message);
         }
       };
 
       declineBtn.onclick = () => {
         incoming.classList.add('hidden');
-        socket.emit('decline_call', {});
+        socket.emit('decline_call');
       };
 
-      socket.on('call_answered', (data) => {
-        if(peer && data.signal){
-          peer.signal(data.signal);
+      socket.on('call_accepted', (signal) => {
+        if(peer && signal){
+          peer.signal(signal);
         }
         document.getElementById('callState').textContent = 'Connected';
       });
 
       socket.on('call_ended', () => endCall());
       socket.on('call_declined', () => {
-        alert('Peer declined your call.');
+        alert('Call declined.');
         endCall();
       });
 
@@ -488,7 +484,7 @@
       }
 
       hangupBtn.addEventListener('click', () => {
-        socket.emit('end_call', {});
+        socket.emit('hangup');
         endCall();
       });
 
@@ -526,7 +522,6 @@
         isCalling = false;
         callOverlay.classList.add('hidden');
         incoming.classList.add('hidden');
-        document.getElementById('callState').textContent = 'Disconnected';
       }
     });
   })();
