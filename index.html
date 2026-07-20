@@ -129,6 +129,7 @@
       padding: 8px;
       min-width: 0;
       height: 100%;
+      position: relative;
     }
 
     .chat-box {
@@ -168,7 +169,7 @@
     .msg img { max-width: 100%; border-radius: 8px; display: block; margin-top: 4px; }
     .msg .meta { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
 
-    /* Composer Fix */
+    /* Composer Fix & Emoji Picker Container */
     .composer {
       display: flex;
       gap: 6px;
@@ -176,6 +177,7 @@
       padding: 6px;
       border-top: 1px solid rgba(255,255,255,0.02);
       flex-shrink: 0;
+      position: relative;
     }
     #messageInput {
       flex: 1;
@@ -186,6 +188,18 @@
       color: var(--text);
       outline: none;
       font-size: 14px;
+    }
+
+    /* Emoji Picker Styling */
+    #emojiPickerContainer {
+      position: absolute;
+      bottom: 50px;
+      left: 10px;
+      z-index: 100;
+      display: none;
+    }
+    #emojiPickerContainer.active {
+      display: block;
     }
 
     /* Overlays */
@@ -226,11 +240,17 @@
         background: #000;
       }
       .chat-box { padding: 4px; }
+      #emojiPickerContainer {
+        left: 0;
+        right: 0;
+        bottom: 55px;
+      }
     }
   </style>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/picmo@5.8.5/dist/umd/index.js"></script>
 </head>
 <body>
   <div id="app">
@@ -278,6 +298,8 @@
         <div id="chatBox" class="chat-box" data-empty="No messages yet"></div>
 
         <div class="composer">
+          <div id="emojiPickerContainer"></div>
+          <button id="emojiBtn" class="icon-btn" title="Choose Emoji">😊</button>
           <button id="camBtn" class="icon-btn" title="Open Snap">📷</button>
           <input id="messageInput" placeholder="Send a chat..." autocomplete="off" />
           <button id="sendBtn" class="btn neon" title="Send message">➤</button>
@@ -321,7 +343,6 @@
 
   <script>
   (function(){
-    // Multi-STUN Servers to ensure WebRTC Connection
     const peerConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -344,6 +365,8 @@
       const attachBtn = document.getElementById('attach');
       const startCallBtn = document.getElementById('startCallBtn');
       const camBtn = document.getElementById('camBtn');
+      const emojiBtn = document.getElementById('emojiBtn');
+      const emojiContainer = document.getElementById('emojiPickerContainer');
 
       const callOverlay = document.getElementById('callOverlay');
       const incoming = document.getElementById('incoming');
@@ -368,6 +391,30 @@
       let peer = null;
       let isCalling = false;
       let incomingSignalData = null;
+
+      // 😀 Emoji Picker Initialization
+      if (window.picmo) {
+        const picker = picmo.createPicker({
+          rootElement: emojiContainer,
+          theme: 'dark'
+        });
+
+        picker.addEventListener('emoji:select', selection => {
+          messageInput.value += selection.emoji;
+          messageInput.focus();
+        });
+
+        emojiBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          emojiContainer.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!emojiContainer.contains(e.target) && e.target !== emojiBtn) {
+            emojiContainer.classList.remove('active');
+          }
+        });
+      }
 
       function appendMessage({ senderId, fromName, text='', attachment=null, ts=Date.now() }){
         const isMe = (senderId === socket.id);
@@ -420,6 +467,7 @@
         socket.emit('send_message', payload);
         appendMessage({ senderId: socket.id, text: txt, ts: payload.ts });
         messageInput.value = '';
+        emojiContainer.classList.remove('active');
       }
 
       sendBtn.addEventListener('click', sendMessage);
@@ -519,7 +567,6 @@
         });
       });
 
-      // 📞 Call Logic Fixed
       startCallBtn.addEventListener('click', async () => {
         if(isCalling) return;
         try{
