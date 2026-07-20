@@ -29,7 +29,7 @@
       width: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden; /* ব্যাকগ্রাউন্ড স্ক্রল বন্ধ */
+      overflow: hidden;
       background:
         radial-gradient(1200px 600px at 10% 10%, rgba(155,123,255,0.06), transparent 10%),
         radial-gradient(800px 500px at 90% 80%, rgba(0,229,255,0.04), transparent 10%),
@@ -42,7 +42,7 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
-      height: 100dvh; /* মোবাইলের আসল হাইট */
+      height: 100dvh;
       width: 100vw;
       padding: 8px;
       gap: 8px;
@@ -83,10 +83,10 @@
       display: flex;
       gap: 10px;
       flex: 1;
-      min-height: 0; /* চ্যাট বক্সে স্ক্রলিং সচল রাখার জন্য */
+      min-height: 0;
     }
 
-    /* Left Panel Fix */
+    /* Left Panel */
     .left-panel {
       width: 260px;
       display: flex;
@@ -321,10 +321,15 @@
 
   <script>
   (function(){
+    // Multi-STUN Servers to ensure WebRTC Connection
     const peerConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' }
       ]
     };
 
@@ -514,6 +519,7 @@
         });
       });
 
+      // 📞 Call Logic Fixed
       startCallBtn.addEventListener('click', async () => {
         if(isCalling) return;
         try{
@@ -542,9 +548,6 @@
           callOverlay.classList.remove('hidden');
           isCalling = true;
           startPeer(false);
-          if(peer && incomingSignalData){
-            peer.signal(incomingSignalData);
-          }
         }catch(err){
           alert('Camera/Mic error: ' + err.message);
         }
@@ -556,7 +559,7 @@
       };
 
       socket.on('call_accepted', (signal) => {
-        if(peer && signal){
+        if(peer){
           peer.signal(signal);
         }
         document.getElementById('callState').textContent = 'Connected';
@@ -584,6 +587,10 @@
           }
         });
 
+        if(!initiator && incomingSignalData){
+          peer.signal(incomingSignalData);
+        }
+
         peer.on('stream', stream => {
           remoteVideo.srcObject = stream;
           document.getElementById('callState').textContent = 'Connected';
@@ -591,7 +598,7 @@
 
         peer.on('error', err => {
           console.error('Peer error:', err);
-          endCall();
+          document.getElementById('callState').textContent = 'Connection failed';
         });
 
         peer.on('close', () => endCall());
