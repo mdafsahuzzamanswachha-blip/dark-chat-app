@@ -33,7 +33,7 @@
     /* Topbar */
     .topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-radius:12px;margin:16px;backdrop-filter:blur(var(--glass-blur));background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));border:1px solid rgba(255,255,255,0.03)}
     .brand{font-weight:700;letter-spacing:0.4px}
-    .status{color:var(--muted)}
+    .status{color:var(--muted); font-weight: 600;}
 
     /* Layout */
     .main{display:flex;gap:14px;padding:12px;height:calc(100% - 88px)}
@@ -52,7 +52,7 @@
 
     /* controls */
     .controls{display:flex;gap:8px;flex-wrap:wrap;padding:6px}
-    .icon-btn{background:transparent;border:none;color:var(--neon);cursor:pointer;padding:8px;border-radius:10px}
+    .icon-btn{background:transparent;border:none;color:var(--neon);cursor:pointer;padding:8px;border-radius:10px; font-size: 18px;}
     .btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text);cursor:pointer}
     .btn.small{padding:6px 10px}
     .btn.neon{background:linear-gradient(90deg,var(--neon),var(--cyan));color:#001018;font-weight:700;box-shadow:0 6px 26px rgba(0,255,157,0.08)}
@@ -65,45 +65,45 @@
     #snapCanvas{width:100%;border-radius:10px}
 
     /* chat box */
-    .chat-box{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px;position:relative}
+    .chat-box{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;position:relative}
     .chat-box:empty::before{content:attr(data-empty);color:var(--muted);position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);opacity:0.7}
 
     /* messages */
     .msg{max-width:78%;padding:8px 12px;border-radius:12px;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.02)}
-    .msg.left{align-self:flex-start;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02))}
-    .msg.right{align-self:flex-end;background:linear-gradient(180deg, rgba(0,255,157,0.05), rgba(0,255,157,0.02));border:1px solid rgba(0,255,157,0.08)}
-    .msg img{max-width:320px;border-radius:10px;display:block}
-    .msg .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .msg.left{align-self:flex-start;background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.02))}
+    .msg.right{align-self:flex-end;background:linear-gradient(180deg, rgba(0,255,157,0.1), rgba(0,255,157,0.02));border:1px solid rgba(0,255,157,0.15)}
+    .msg img{max-width:100%; border-radius:10px;display:block; margin-top: 5px;}
+    .msg .meta{font-size:11px;color:var(--muted);margin-bottom:4px}
 
     /* composer */
     .composer{display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid rgba(255,255,255,0.02)}
     .composer-left{display:flex;gap:8px}
-    #messageInput{flex:1;padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text)}
-    .send-btn{width:52px;height:52px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--neon),var(--cyan));color:#001018;font-weight:700;cursor:pointer}
-
+    #messageInput{flex:1;padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.2);color:var(--text); outline: none;}
+    
     /* call overlay */
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:60;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.75))}
-    .overlay.hidden{display:none}
-    .call-card{width:100%;max-width:920px;padding:20px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:60;background:rgba(0,0,0,0.8)}
+    .overlay.hidden{display:none !important}
+    .call-card{width:90%;max-width:800px;padding:20px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
     .call-header{display:flex;gap:12px;align-items:center;width:100%}
-    .call-videos{position:relative;width:100%;height:420px;background:#001018;border-radius:12px;overflow:hidden}
+    .call-videos{position:relative;width:100%;height:380px;background:#000;border-radius:12px;overflow:hidden}
     .call-videos video{width:100%;height:100%;object-fit:cover}
-    .call-videos .local{position:absolute;right:12px;bottom:12px;width:140px;height:180px;border-radius:10px;border:1px solid rgba(255,255,255,0.04)}
-    .call-actions{display:flex;gap:12px;align-items:center}
-    .ctrl{width:68px;height:68px;border-radius:999px;border:none;background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));display:inline-flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer}
-    .ctrl.danger{background:linear-gradient(90deg,#ff5b6f,#ea0038);color:#fff}
+    .call-videos .local{position:absolute;right:12px;bottom:12px;width:120px;height:160px;border-radius:10px;border:2px solid var(--neon); background:#111; z-index: 2;}
+    .call-actions{display:flex;gap:12px;align-items:center; margin-top: 10px;}
+    .ctrl{width:56px;height:56px;border-radius:50%;border:none;background:rgba(255,255,255,0.1);display:inline-flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer; font-size: 20px;}
+    .ctrl.danger{background:#ff5b6f;color:#fff}
+    .ctrl.active{background: var(--neon); color: #000;}
 
-    /* incoming */
-    .incoming.hidden{display:none}
+    /* incoming card */
+    .incoming-card{padding:24px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; gap: 16px;}
+    .incoming-actions{display: flex; gap: 12px; justify-content: center;}
 
     @media (max-width:860px){
       .main{flex-direction:column;padding:10px}
       .left-panel{width:100%;display:flex;flex-direction:row;align-items:flex-start}
       .center{width:100%}
-      .call-videos{height:60vh}
+      .call-videos{height:50vh}
     }
 
-    /* subtle animations */
     .msg{animation:slideIn .28s ease both}
     @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   </style>
@@ -115,8 +115,8 @@
   <div id="app">
     <header class="topbar glass">
       <div class="brand">Aurora Snap</div>
-      <div class="top-right">
-        <div id="status" class="status">offline</div>
+      <div class="top-right" style="display: flex; gap: 10px; align-items: center;">
+        <div id="status" class="status">connecting...</div>
         <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">🌓</button>
       </div>
     </header>
@@ -138,14 +138,14 @@
           <button id="startCallBtn" class="btn small neon">Call</button>
         </div>
 
-        <div class="snap-area glass" id="snapArea" aria-hidden="true" style="display:none;">
+        <div class="snap-area glass" id="snapArea" style="display:none;">
           <div class="snap-head">Snap Camera</div>
           <video id="snapVideo" autoplay muted playsinline></video>
           <canvas id="snapCanvas" hidden></canvas>
-          <div class="snap-actions">
-            <button id="captureBtn" class="btn neon">Capture</button>
-            <button id="sendSnapBtn" class="btn">Send</button>
-            <button id="closeSnapBtn" class="btn">Close</button>
+          <div class="snap-actions" style="display: flex; gap: 6px; margin-top: 6px;">
+            <button id="captureBtn" class="btn small neon">Capture</button>
+            <button id="sendSnapBtn" class="btn small">Send</button>
+            <button id="closeSnapBtn" class="btn small danger">Close</button>
           </div>
         </div>
       </aside>
@@ -155,7 +155,6 @@
 
         <div class="composer">
           <div class="composer-left">
-            <button id="micBtn" class="icon-btn" title="Record/Send voice">🎙️</button>
             <button id="camBtn" class="icon-btn" title="Open Snap">📷</button>
           </div>
 
@@ -168,7 +167,7 @@
       </section>
     </main>
 
-    <div id="callOverlay" class="overlay hidden" aria-hidden="true">
+    <div id="callOverlay" class="overlay hidden">
       <div class="call-card glass">
         <div class="call-header">
           <div id="callAvatar" class="avatar large">C</div>
@@ -186,44 +185,38 @@
         <div class="call-actions">
           <button id="muteBtn" class="ctrl" title="Mute">🎙️</button>
           <button id="cameraToggleBtn" class="ctrl" title="Toggle camera">📷</button>
-          <button id="speakerBtn" class="ctrl" title="Toggle speaker">🔊</button>
           <button id="hangupBtn" class="ctrl danger" title="End call">🛑</button>
         </div>
       </div>
     </div>
 
-    <div id="incoming" class="overlay hidden" aria-hidden="true">
+    <div id="incoming" class="overlay hidden">
       <div class="incoming-card glass">
-        <div id="incomingText">Incoming call...</div>
+        <div id="incomingText" style="font-size: 18px; font-weight: 600;">Incoming call...</div>
         <div class="incoming-actions">
           <button id="answerBtn" class="btn neon">Answer</button>
           <button id="declineBtn" class="btn danger">Decline</button>
         </div>
       </div>
     </div>
-
-    <audio id="msgSound" preload="auto"></audio>
   </div>
 
   <script>
   (function(){
-    // STUN/TURN demo config
     const peerConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:openrelay.metered.ca:80' },
         { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
       ]
     };
 
-    // Wait for DOM
     window.addEventListener('DOMContentLoaded', () => {
-      // Connect to external backend URL explicitly
+      // Direct Backend Connection
       const socket = io("https://dark-chat-backend-2v8y.onrender.com");
 
-      // DOM refs
+      // DOM Elements
       const statusEl = document.getElementById('status');
       const sendBtn = document.getElementById('sendBtn');
       const messageInput = document.getElementById('messageInput');
@@ -231,6 +224,7 @@
       const fileInput = document.getElementById('fileInput');
       const attachBtn = document.getElementById('attach');
       const startCallBtn = document.getElementById('startCallBtn');
+      const camBtn = document.getElementById('camBtn');
 
       const callOverlay = document.getElementById('callOverlay');
       const incoming = document.getElementById('incoming');
@@ -241,7 +235,6 @@
       const hangupBtn = document.getElementById('hangupBtn');
       const muteBtn = document.getElementById('muteBtn');
       const cameraToggleBtn = document.getElementById('cameraToggleBtn');
-      const speakerBtn = document.getElementById('speakerBtn');
 
       const openSnap = document.getElementById('openSnap');
       const snapArea = document.getElementById('snapArea');
@@ -250,78 +243,292 @@
       const sendSnapBtn = document.getElementById('sendSnapBtn');
       const closeSnapBtn = document.getElementById('closeSnapBtn');
       const snapCanvas = document.getElementById('snapCanvas');
-
       const themeToggle = document.getElementById('themeToggle');
 
-      // state
       let localStream = null;
       let peer = null;
       let isCalling = false;
-      let myId = null;
-
-      // simple beep
-      function playBeep(){
-        try{const ctx=new (window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator();const g=ctx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=0.03;o.connect(g);g.connect(ctx.destination);o.start();setTimeout(()=>{o.stop();ctx.close()},90)}catch(e){}
-      }
+      let incomingSignalData = null;
 
       function appendMessage({ from='me', fromName=null, text='', attachment=null, ts=Date.now() }){
-        const el=document.createElement('div');el.className='msg '+(from==='me'?'right':'left');
-        const meta=document.createElement('div');meta.className='meta';meta.textContent=`${from==='me'?'You':(fromName||from)} • ${new Date(ts).toLocaleTimeString()}`;el.appendChild(meta);
-        if(text){const p=document.createElement('div');p.textContent=text;el.appendChild(p)}
-        if(attachment){if(attachment.type&&attachment.type.startsWith('image')){const img=document.createElement('img');img.src=attachment.data;img.alt=attachment.name||'image';el.appendChild(img)}else{const a=document.createElement('a');a.href=attachment.data;a.textContent=attachment.name||'attachment';a.target='_blank';el.appendChild(a)}}
-        chatBox.appendChild(el);chatBox.scrollTop=chatBox.scrollHeight; if(from!=='me') playBeep();
+        const el = document.createElement('div');
+        el.className = 'msg ' + (from === 'me' ? 'right' : 'left');
+        
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = `${from === 'me' ? 'You' : (fromName || 'Peer')} • ${new Date(ts).toLocaleTimeString()}`;
+        el.appendChild(meta);
+
+        if(text){
+          const p = document.createElement('div');
+          p.textContent = text;
+          el.appendChild(p);
+        }
+
+        if(attachment){
+          if(attachment.type && attachment.type.startsWith('image')){
+            const img = document.createElement('img');
+            img.src = attachment.data;
+            el.appendChild(img);
+          } else {
+            const a = document.createElement('a');
+            a.href = attachment.data;
+            a.textContent = attachment.name || 'Attachment';
+            a.target = '_blank';
+            a.style.color = '#00ff9d';
+            el.appendChild(a);
+          }
+        }
+
+        chatBox.appendChild(el);
+        chatBox.scrollTop = chatBox.scrollHeight;
       }
 
-      function readFileAsDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+      function readFileAsDataURL(file){
+        return new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = rej;
+          r.readAsDataURL(file);
+        });
+      }
 
-      // messaging
-      sendBtn?.addEventListener('click', ()=>{const txt=(messageInput.value||'').trim(); if(!txt) return; const payload={text:txt,ts:Date.now()}; socket.emit('send_message',payload); appendMessage({from:'me',text:txt,ts:payload.ts}); messageInput.value='';});
-      messageInput?.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault(); sendBtn.click();}});
+      // 1. Messaging Controls
+      function sendMessage(){
+        const txt = (messageInput.value || '').trim();
+        if(!txt) return;
+        const payload = { text: txt, ts: Date.now() };
+        socket.emit('send_message', payload);
+        appendMessage({ from: 'me', text: txt, ts: payload.ts });
+        messageInput.value = '';
+      }
 
-      attachBtn?.addEventListener('click',()=>fileInput.click());
-      fileInput?.addEventListener('change',async(e)=>{const file=e.target.files&&e.target.files[0]; if(!file) return; const data=await readFileAsDataURL(file); const attachment={name:file.name,type:file.type,data}; socket.emit('send_message',{attachment,ts:Date.now()}); appendMessage({from:'me',attachment,ts:Date.now()}); fileInput.value='';});
+      sendBtn.addEventListener('click', sendMessage);
+      messageInput.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          sendMessage();
+        }
+      });
 
-      // typing
-      let typingTimer=null; messageInput?.addEventListener('input',()=>{socket.emit('typing',{name:document.getElementById('myName')?.textContent||'You',isTyping:true}); clearTimeout(typingTimer); typingTimer=setTimeout(()=>socket.emit('typing',{name:document.getElementById('myName')?.textContent||'You',isTyping:false}),1200);});
+      // 2. Attachments
+      attachBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if(!file) return;
+        const data = await readFileAsDataURL(file);
+        const attachment = { name: file.name, type: file.type, data };
+        socket.emit('send_message', { attachment, ts: Date.now() });
+        appendMessage({ from: 'me', attachment, ts: Date.now() });
+        fileInput.value = '';
+      });
 
-      // theme
-      themeToggle?.addEventListener('click',()=>document.documentElement.classList.toggle('light'));
+      // 3. Snap Camera
+      const toggleSnap = async () => {
+        if(snapArea.style.display === 'flex'){
+          closeSnap();
+          return;
+        }
+        snapArea.style.display = 'flex';
+        try{
+          const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          snapVideo.srcObject = s;
+          snapVideo.play();
+          snapArea._stream = s;
+        }catch(err){
+          alert('Camera permission error: ' + err.message);
+          snapArea.style.display = 'none';
+        }
+      };
 
-      // snap
-      openSnap?.addEventListener('click',async()=>{snapArea.style.display='flex';snapArea.removeAttribute('aria-hidden'); try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false}); snapVideo.srcObject=s; snapVideo.play(); snapArea._stream=s;}catch(err){alert('Camera permission required for Snap: '+err.message)}});
-      captureBtn?.addEventListener('click',()=>{if(!snapVideo||!snapVideo.srcObject) return; const w=snapVideo.videoWidth||640; const h=snapVideo.videoHeight||480; snapCanvas.width=w; snapCanvas.height=h; const ctx=snapCanvas.getContext('2d'); ctx.drawImage(snapVideo,0,0,w,h); snapCanvas.hidden=false; snapCanvas.style.display='block';});
-      sendSnapBtn?.addEventListener('click',()=>{if(snapCanvas.hidden) return alert('Capture first'); const data=snapCanvas.toDataURL('image/png'); const attachment={name:'snap.png',type:'image/png',data}; socket.emit('send_message',{attachment,ts:Date.now()}); appendMessage({from:'me',attachment,ts:Date.now()}); closeSnap();});
-      closeSnapBtn?.addEventListener('click',closeSnap);
-      function closeSnap(){ if(snapArea._stream){snapArea._stream.getTracks().forEach(t=>t.stop()); snapArea._stream=null;} snapVideo.srcObject=null; snapCanvas.hidden=true; snapArea.style.display='none'; }
+      openSnap.addEventListener('click', toggleSnap);
+      camBtn.addEventListener('click', toggleSnap);
 
-      // socket handlers
-      socket.on('connect',()=>{myId=socket.id; statusEl.textContent='online'; socket.emit('set_username',{name:'User-'+myId.slice(0,4)})});
-      socket.on('disconnect',()=>statusEl.textContent='offline');
+      captureBtn.addEventListener('click', () => {
+        if(!snapVideo || !snapVideo.srcObject) return;
+        const w = snapVideo.videoWidth || 640;
+        const h = snapVideo.videoHeight || 480;
+        snapCanvas.width = w;
+        snapCanvas.height = h;
+        const ctx = snapCanvas.getContext('2d');
+        ctx.drawImage(snapVideo, 0, 0, w, h);
+        snapCanvas.hidden = false;
+      });
 
-      socket.on('broadcast_message',(payload)=>{appendMessage({from:payload.from,fromName:payload.fromName,text:payload.text,attachment:payload.attachment,ts:payload.ts})});
-      socket.on('typing',({name,isTyping})=>{const st=document.getElementById('myStatus'); if(st) st.textContent=isTyping?`${name} is typing...`:'Available'});
+      sendSnapBtn.addEventListener('click', () => {
+        if(snapCanvas.hidden) return alert('Capture a snap first!');
+        const data = snapCanvas.toDataURL('image/png');
+        const attachment = { name: 'snap.png', type: 'image/png', data };
+        socket.emit('send_message', { attachment, ts: Date.now() });
+        appendMessage({ from: 'me', attachment, ts: Date.now() });
+        closeSnap();
+      });
 
-      // CALLS
-      startCallBtn?.addEventListener('click',async()=>{if(isCalling) return; try{localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true}); localVideoEl.srcObject=localStream; startPeer(true); isCalling=true; document.getElementById('callState').textContent='Ringing...'; callOverlay.classList.remove('hidden'); }catch(err){alert('Camera/Microphone permission required: '+err.message)}});
+      closeSnapBtn.addEventListener('click', closeSnap);
 
-      hangupBtn?.addEventListener('click',()=>{socket.emit('end_call',{}); endCall();});
-      muteBtn?.addEventListener('click',()=>{ if(!localStream) return; const t=localStream.getAudioTracks()[0]; if(!t) return; t.enabled=!t.enabled; muteBtn.classList.toggle('active',!t.enabled); muteBtn.textContent=t.enabled?'🎙️':'🔇'; });
-      cameraToggleBtn?.addEventListener('click',()=>{ if(!localStream) return; const tv=localStream.getVideoTracks()[0]; if(!tv) return; tv.enabled=!tv.enabled; cameraToggleBtn.textContent=tv.enabled?'📷':'❌📷'; });
+      function closeSnap(){
+        if(snapArea._stream){
+          snapArea._stream.getTracks().forEach(t => t.stop());
+          snapArea._stream = null;
+        }
+        snapVideo.srcObject = null;
+        snapCanvas.hidden = true;
+        snapArea.style.display = 'none';
+      }
 
-      socket.on('incoming_call',async(data)=>{ incoming.classList.remove('hidden'); document.getElementById('incomingText').textContent=`${data.callerName||'Peer'} is calling...`; answerBtn.onclick=async()=>{ incoming.classList.add('hidden'); try{ localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true}); localVideoEl.srcObject=localStream; startPeer(false); peer.signal(data.signal); callOverlay.classList.remove('hidden'); }catch(err){alert('Camera/Microphone permission required: '+err.message)} }; declineBtn.onclick=()=>{incoming.classList.add('hidden'); socket.emit('decline_call',{to:data.from})}; });
+      themeToggle.addEventListener('click', () => document.documentElement.classList.toggle('light'));
 
-      socket.on('call_answered',(data)=>{ if(peer&&data.signal) peer.signal(data.signal); document.getElementById('callState').textContent='Connected'; });
-      socket.on('call_ended',()=>endCall());
-      socket.on('call_declined',()=>{ alert('Peer declined the call.'); endCall(); });
+      // 4. Socket Event Listeners
+      socket.on('connect', () => {
+        statusEl.textContent = 'online';
+        statusEl.style.color = '#00ff9d';
+        socket.emit('set_username', { name: 'User-' + socket.id.slice(0, 4) });
+      });
 
-      function startPeer(initiator){ peer=new SimplePeer({initiator,trickle:true,stream:localStream,config:peerConfig}); peer.on('signal',data=>{ if(initiator){ socket.emit('call_user',{signal:data,callerName:document.getElementById('myName')?.textContent||'You',isVideo:true}); }else{ socket.emit('answer_call',{signal:data}); } }); peer.on('stream',stream=>{ remoteVideo.srcObject=stream; document.getElementById('callState').textContent='Connected'; }); peer.on('error',err=>{ console.error('Peer error',err); endCall(); }); peer.on('close',()=>{ endCall(); }); }
+      socket.on('disconnect', () => {
+        statusEl.textContent = 'offline';
+        statusEl.style.color = '#ff5b6f';
+      });
 
-      function endCall(){ if(peer){ try{peer.destroy()}catch(e){} peer=null } if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null } remoteVideo.srcObject=null; localVideoEl.srcObject=null; isCalling=false; callOverlay.classList.add('hidden'); incoming.classList.add('hidden'); document.getElementById('callState').textContent='Disconnected'; }
+      // Broadcast Message Handling (Fixes message receiving issue)
+      socket.on('broadcast_message', (payload) => {
+        if(payload.from !== socket.id){
+          appendMessage({
+            from: payload.from,
+            fromName: payload.fromName,
+            text: payload.text,
+            attachment: payload.attachment,
+            ts: payload.ts
+          });
+        }
+      });
 
-      // expose for debug
-      window.AuroraSnap={socket,getPeer:()=>peer};
+      // 5. WebRTC Video Call Logic
+      startCallBtn.addEventListener('click', async () => {
+        if(isCalling) return;
+        try{
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+          localVideoEl.srcObject = localStream;
+          callOverlay.classList.remove('hidden');
+          document.getElementById('callState').textContent = 'Calling...';
+          isCalling = true;
+          startPeer(true);
+        }catch(err){
+          alert('Mic & Camera permissions required for calls: ' + err.message);
+        }
+      });
 
-    }); // DOMContentLoaded
+      socket.on('incoming_call', (data) => {
+        incomingSignalData = data.signal;
+        incoming.classList.remove('hidden');
+        document.getElementById('incomingText').textContent = `${data.callerName || 'Peer'} is calling...`;
+      });
+
+      answerBtn.onclick = async () => {
+        incoming.classList.add('hidden');
+        try{
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+          localVideoEl.srcObject = localStream;
+          callOverlay.classList.remove('hidden');
+          isCalling = true;
+          startPeer(false);
+          if(peer && incomingSignalData){
+            peer.signal(incomingSignalData);
+          }
+        }catch(err){
+          alert('Could not access Camera/Mic to answer: ' + err.message);
+        }
+      };
+
+      declineBtn.onclick = () => {
+        incoming.classList.add('hidden');
+        socket.emit('decline_call', {});
+      };
+
+      socket.on('call_answered', (data) => {
+        if(peer && data.signal){
+          peer.signal(data.signal);
+        }
+        document.getElementById('callState').textContent = 'Connected';
+      });
+
+      socket.on('call_ended', () => endCall());
+      socket.on('call_declined', () => {
+        alert('Peer declined your call.');
+        endCall();
+      });
+
+      function startPeer(initiator){
+        peer = new SimplePeer({
+          initiator: initiator,
+          trickle: true,
+          stream: localStream,
+          config: peerConfig
+        });
+
+        peer.on('signal', data => {
+          if(initiator){
+            socket.emit('call_user', { signal: data, isVideo: true });
+          } else {
+            socket.emit('answer_call', { signal: data });
+          }
+        });
+
+        peer.on('stream', stream => {
+          remoteVideo.srcObject = stream;
+          document.getElementById('callState').textContent = 'Connected';
+        });
+
+        peer.on('error', err => {
+          console.error('Peer error:', err);
+          endCall();
+        });
+
+        peer.on('close', () => endCall());
+      }
+
+      hangupBtn.addEventListener('click', () => {
+        socket.emit('end_call', {});
+        endCall();
+      });
+
+      muteBtn.addEventListener('click', () => {
+        if(!localStream) return;
+        const audioTrack = localStream.getAudioTracks()[0];
+        if(audioTrack){
+          audioTrack.enabled = !audioTrack.enabled;
+          muteBtn.classList.toggle('active', !audioTrack.enabled);
+          muteBtn.textContent = audioTrack.enabled ? '🎙️' : '🔇';
+        }
+      });
+
+      cameraToggleBtn.addEventListener('click', () => {
+        if(!localStream) return;
+        const videoTrack = localStream.getVideoTracks()[0];
+        if(videoTrack){
+          videoTrack.enabled = !videoTrack.enabled;
+          cameraToggleBtn.classList.toggle('active', !videoTrack.enabled);
+          cameraToggleBtn.textContent = videoTrack.enabled ? '📷' : '🚫';
+        }
+      });
+
+      function endCall(){
+        if(peer){
+          try{ peer.destroy(); }catch(e){}
+          peer = null;
+        }
+        if(localStream){
+          localStream.getTracks().forEach(t => t.stop());
+          localStream = null;
+        }
+        remoteVideo.srcObject = null;
+        localVideoEl.srcObject = null;
+        isCalling = false;
+        callOverlay.classList.add('hidden');
+        incoming.classList.add('hidden');
+        document.getElementById('callState').textContent = 'Disconnected';
+      }
+    });
   })();
   </script>
 </body>
