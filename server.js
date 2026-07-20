@@ -1,84 +1,83 @@
 const express = require('express');
 const http = require('http');
-const path = require('path');
 const { Server } = require('socket.io');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
+
+// Health Check Endpoint
+app.get('/', (req, res) => {
+    res.send('Instant Chat Server is Running perfectly!');
+});
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+let onlineUsers = 0;
+
+io.on('connection', (socket) => {
+    onlineUsers++;
+    console.log(`User Connected: ${socket.id} (Total: ${onlineUsers})`);
+
+    // ১v১ চ্যাটের জন্য সবাইকে ফিক্সড 'chat-room'-এ জয়েন করানো হচ্ছে
+    socket.join('chat-room');
+    
+    // ইউজার কাউন্ট পাঠানো
+    io.to('chat-room').emit('user_count_update', onlineUsers);
+
+    // মেসেজ পাওয়ার পর রুমের অন্য সবাইকে পাঠানো
+    socket.on('send_message', (data) => {
+        const envelope = {
+            from: socket.id,
+            fromName: data.fromName || ('User-' + socket.id.slice(0, 4)),
+            text: data.text || '',
+            attachment: data.attachment || null,
+            ts: data.ts || Date.now()
+        };
+        socket.to('chat-room').emit('receive_message', envelope);
+    });
+
+    // টাইপিং স্ট্যাটাস
+    socket.on('typing', (isTyping) => {
+        socket.to('chat-room').emit('user_typing', isTyping);
+    });
+
+    // ভিডিও কল সিগন্যালিং
+    socket.on('call_user', (data) => {
+        socket.to('chat-room').emit('incoming_call', {
+            signal: data.signal,
+            callerName: 'User-' + socket.id.slice(0, 4),
+            isVideo: data.isVideo
+        });
+    });
+
+    socket.on('answer_call', (data) => {
+        socket.to('chat-room').emit('call_accepted', data.signal);
+    });
+
+    socket.on('decline_call', () => {
+        socket.to('chat-room').emit('call_declined');
+    });
+
+    socket.on('hangup', () => {
+        io.to('chat-room').emit('call_ended');
+    });
+
+    socket.on('disconnect', () => {
+        onlineUsers = Math.max(0, onlineUsers - 1);
+        console.log(`User Disconnected: ${socket.id} (Total: ${onlineUsers})`);
+        io.to('chat-room').emit('user_count_update', onlineUsers);
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-
-app.use(express.static(path.join(__dirname, '/')));
-
-const users = new Map();
-
-io.on('connection', (socket) => {
-  users.set(socket.id, { id: socket.id, name: 'User-' + socket.id.slice(0, 4) });
-  
-  // নতুন কেউ কানেক্ট হলে সবাইকে জানিয়ে দেওয়া
-  io.emit('user_list', Array.from(users.values()));
-
-  socket.on('set_username', ({ name }) => {
-    users.set(socket.id, { id: socket.id, name });
-    io.emit('user_list', Array.from(users.values()));
-  });
-
-  // মেসেজিং (সবাই পাবে)
-  socket.on('send_message', (payload) => {
-    const sender = users.get(socket.id) || {};
-    const envelope = {
-      from: socket.id,
-      fromName: sender.name || ('User-' + socket.id.slice(0,4)),
-      text: payload.text || '',
-      attachment: payload.attachment || null,
-      ts: payload.ts || Date.now()
-    };
-    
-    // নিজের ছাড়া বাকি সবাইকে মেসেজ পাঠানো
-    socket.broadcast.emit('broadcast_message', envelope);
-  });
-
-  socket.on('typing', (d) => {
-    const sender = users.get(socket.id) || {};
-    socket.broadcast.emit('typing', { name: sender.name, isTyping: d.isTyping });
-  });
-
-  // কল সিগন্যালিং
-  socket.on('call_user', (data) => {
-    const sender = users.get(socket.id) || {};
-    socket.broadcast.emit('incoming_call', { 
-      signal: data.signal, 
-      from: socket.id, 
-      callerName: sender.name, 
-      isVideo: data.isVideo 
-    });
-  });
-
-  socket.on('answer_call', (data) => {
-    socket.broadcast.emit('call_answered', { signal: data.signal, from: socket.id });
-  });
-
-  socket.on('decline_call', () => {
-    socket.broadcast.emit('call_declined', { from: socket.id });
-  });
-
-  socket.on('end_call', () => {
-    socket.broadcast.emit('call_ended', { from: socket.id });
-  });
-
-  socket.on('disconnect', () => {
-    users.delete(socket.id);
-    io.emit('user_list', Array.from(users.values()));
-  });
-});
-
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
