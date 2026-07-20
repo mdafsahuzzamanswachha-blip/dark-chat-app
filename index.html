@@ -46,6 +46,7 @@
       width: 100vw;
       padding: 8px;
       gap: 8px;
+      overflow: hidden;
     }
 
     .glass{
@@ -83,7 +84,8 @@
       display: flex;
       gap: 10px;
       flex: 1;
-      min-height: 0;
+      min-height: 0; /* Important fix for overflow */
+      overflow: hidden;
     }
 
     /* Left Panel */
@@ -120,7 +122,7 @@
     #snapVideo { width: 100%; height: 120px; border-radius: 8px; background: #000; object-fit: cover; }
     #snapCanvas { width: 100%; border-radius: 8px; }
 
-    /* Center (Chat Section) */
+    /* Center (Chat Section Fix) */
     .center {
       flex: 1;
       display: flex;
@@ -129,17 +131,19 @@
       padding: 8px;
       min-width: 0;
       height: 100%;
+      overflow: hidden; /* Fix for box overflow */
       position: relative;
     }
 
     .chat-box {
       flex: 1;
-      overflow-y: auto;
+      overflow-y: auto; /* Enable vertical scroll */
       padding: 8px;
       display: flex;
       flex-direction: column;
       gap: 10px;
       position: relative;
+      min-height: 0; /* Fix flex overflow */
     }
     .chat-box:empty::before {
       content: attr(data-empty);
@@ -169,14 +173,14 @@
     .msg img { max-width: 100%; border-radius: 8px; display: block; margin-top: 4px; }
     .msg .meta { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
 
-    /* Composer Fix & Emoji Picker Container */
+    /* Composer Fixed to Bottom */
     .composer {
       display: flex;
       gap: 6px;
       align-items: center;
       padding: 6px;
       border-top: 1px solid rgba(255,255,255,0.02);
-      flex-shrink: 0;
+      flex-shrink: 0; /* Prevents composer from shrinking or being pushed */
       position: relative;
     }
     #messageInput {
@@ -193,7 +197,7 @@
     /* Emoji Picker Styling */
     #emojiPickerContainer {
       position: absolute;
-      bottom: 50px;
+      bottom: 55px;
       left: 10px;
       z-index: 100;
       display: none;
@@ -243,7 +247,7 @@
       #emojiPickerContainer {
         left: 0;
         right: 0;
-        bottom: 55px;
+        bottom: 60px;
       }
     }
   </style>
