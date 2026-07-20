@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Aurora Snap — Dark Chat</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -20,92 +20,202 @@
       --radius:14px;
       --glow: 0 8px 40px rgba(0,255,157,0.08);
       --glass-blur:10px;
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      font-family: 'Inter', system-ui, -apple-system, Roboto, sans-serif;
     }
 
     *{box-sizing:border-box}
-    html,body,#app{height:100%;margin:0;background:
-      radial-gradient(1200px 600px at 10% 10%, rgba(155,123,255,0.06), transparent 10%),
-      radial-gradient(800px 500px at 90% 80%, rgba(0,229,255,0.04), transparent 10%),
-      var(--bg);
-    color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
-
-    /* Topbar */
-    .topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-radius:12px;margin:16px;backdrop-filter:blur(var(--glass-blur));background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));border:1px solid rgba(255,255,255,0.03)}
-    .brand{font-weight:700;letter-spacing:0.4px}
-    .status{color:var(--muted); font-weight: 600;}
-
-    /* Layout */
-    .main{display:flex;gap:14px;padding:12px;height:calc(100% - 88px)}
-    .left-panel{width:260px;min-width:200px;display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:12px}
-    .center{flex:1;display:flex;flex-direction:column;border-radius:12px;padding:12px;min-width:0}
-
-    /* glass style */
-    .glass{backdrop-filter:blur(var(--glass-blur));background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));border:1px solid rgba(255,255,255,0.03);box-shadow:var(--glow)}
-
-    /* profile */
-    .profile{display:flex;gap:12px;align-items:center;padding:6px}
-    .avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));border:1px solid rgba(255,255,255,0.03);font-weight:700}
-    .avatar.large{width:92px;height:92px;font-size:20px}
-    .meta .name{font-weight:600}
-    .meta .sub{font-size:13px;color:var(--muted)}
-
-    /* controls */
-    .controls{display:flex;gap:8px;flex-wrap:wrap;padding:6px}
-    .icon-btn{background:transparent;border:none;color:var(--neon);cursor:pointer;padding:8px;border-radius:10px; font-size: 18px;}
-    .btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text);cursor:pointer}
-    .btn.small{padding:6px 10px}
-    .btn.neon{background:linear-gradient(90deg,var(--neon),var(--cyan));color:#001018;font-weight:700;box-shadow:0 6px 26px rgba(0,255,157,0.08)}
-    .btn.danger{background:linear-gradient(90deg,#ff5b6f,#ea0038);color:#fff}
-
-    /* snap area */
-    .snap-area{display:flex;flex-direction:column;gap:8px;padding:10px;min-height:220px;align-items:center}
-    .snap-head{font-weight:600;color:var(--muted)}
-    #snapVideo{width:100%;height:160px;border-radius:10px;background:#000;object-fit:cover}
-    #snapCanvas{width:100%;border-radius:10px}
-
-    /* chat box */
-    .chat-box{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;position:relative}
-    .chat-box:empty::before{content:attr(data-empty);color:var(--muted);position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);opacity:0.7}
-
-    /* messages */
-    .msg{max-width:78%;padding:8px 12px;border-radius:12px;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.02)}
-    .msg.left{align-self:flex-start;background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.02))}
-    .msg.right{align-self:flex-end;background:linear-gradient(180deg, rgba(0,255,157,0.1), rgba(0,255,157,0.02));border:1px solid rgba(0,255,157,0.15)}
-    .msg img{max-width:100%; border-radius:10px;display:block; margin-top: 5px;}
-    .msg .meta{font-size:11px;color:var(--muted);margin-bottom:4px}
-
-    /* composer */
-    .composer{display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid rgba(255,255,255,0.02)}
-    .composer-left{display:flex;gap:8px}
-    #messageInput{flex:1;padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.2);color:var(--text); outline: none;}
-    
-    /* call overlay */
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:60;background:rgba(0,0,0,0.8)}
-    .overlay.hidden{display:none !important}
-    .call-card{width:90%;max-width:800px;padding:20px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
-    .call-header{display:flex;gap:12px;align-items:center;width:100%}
-    .call-videos{position:relative;width:100%;height:380px;background:#000;border-radius:12px;overflow:hidden}
-    .call-videos video{width:100%;height:100%;object-fit:cover}
-    .call-videos .local{position:absolute;right:12px;bottom:12px;width:120px;height:160px;border-radius:10px;border:2px solid var(--neon); background:#111; z-index: 2;}
-    .call-actions{display:flex;gap:12px;align-items:center; margin-top: 10px;}
-    .ctrl{width:56px;height:56px;border-radius:50%;border:none;background:rgba(255,255,255,0.1);display:inline-flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer; font-size: 20px;}
-    .ctrl.danger{background:#ff5b6f;color:#fff}
-    .ctrl.active{background: var(--neon); color: #000;}
-
-    /* incoming card */
-    .incoming-card{padding:24px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; gap: 16px;}
-    .incoming-actions{display: flex; gap: 12px; justify-content: center;}
-
-    @media (max-width:860px){
-      .main{flex-direction:column;padding:10px}
-      .left-panel{width:100%;display:flex;flex-direction:row;align-items:flex-start}
-      .center{width:100%}
-      .call-videos{height:50vh}
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* ব্যাকগ্রাউন্ড স্ক্রল বন্ধ */
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(155,123,255,0.06), transparent 10%),
+        radial-gradient(800px 500px at 90% 80%, rgba(0,229,255,0.04), transparent 10%),
+        var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
     }
 
-    .msg{animation:slideIn .28s ease both}
-    @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh; /* মোবাইলের আসল হাইট */
+      width: 100vw;
+      padding: 8px;
+      gap: 8px;
+    }
+
+    .glass{
+      backdrop-filter: blur(var(--glass-blur));
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+      border: 1px solid rgba(255,255,255,0.03);
+      box-shadow: var(--glow);
+    }
+
+    /* Topbar */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    .brand{font-weight:700; letter-spacing:0.4px}
+    .status{color:var(--muted); font-weight: 600;}
+
+    /* Main Layout */
+    .main {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      min-height: 0; /* চ্যাট বক্সে স্ক্রলিং সচল রাখার জন্য */
+    }
+
+    /* Left Panel Fix */
+    .left-panel {
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .profile { display: flex; gap: 10px; align-items: center; }
+    .avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+      border: 1px solid rgba(255,255,255,0.03); font-weight: 700;
+    }
+    .avatar.large{ width:80px; height:80px; font-size:20px }
+    .meta .name{ font-weight:600 }
+    .meta .sub{ font-size:12px; color:var(--muted) }
+
+    .controls { display: flex; gap: 6px; flex-wrap: wrap; }
+    .icon-btn { background: transparent; border: none; color: var(--neon); cursor: pointer; padding: 6px; font-size: 18px; }
+    .btn { padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); background: transparent; color: var(--text); cursor: pointer; font-size: 13px;}
+    .btn.small { padding: 6px 10px; }
+    .btn.neon { background: linear-gradient(90deg,var(--neon),var(--cyan)); color: #001018; font-weight: 700; }
+    .btn.danger { background: linear-gradient(90deg,#ff5b6f,#ea0038); color: #fff; }
+
+    /* Snap Area */
+    .snap-area { display: flex; flex-direction: column; gap: 6px; padding: 8px; align-items: center; }
+    #snapVideo { width: 100%; height: 120px; border-radius: 8px; background: #000; object-fit: cover; }
+    #snapCanvas { width: 100%; border-radius: 8px; }
+
+    /* Center (Chat Section) */
+    .center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 0;
+      height: 100%;
+    }
+
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    .chat-box:empty::before {
+      content: attr(data-empty);
+      color: var(--muted);
+      position: absolute; left: 50%; top: 48%;
+      transform: translate(-50%,-50%); opacity: 0.7;
+    }
+
+    /* Messages Style */
+    .msg {
+      max-width: 82%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.02);
+      word-break: break-word;
+    }
+    .msg.left {
+      align-self: flex-start;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.02));
+    }
+    .msg.right {
+      align-self: flex-end;
+      background: linear-gradient(180deg, rgba(0,255,157,0.12), rgba(0,255,157,0.02));
+      border: 1px solid rgba(0,255,157,0.2);
+    }
+    .msg img { max-width: 100%; border-radius: 8px; display: block; margin-top: 4px; }
+    .msg .meta { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+
+    /* Composer Fix */
+    .composer {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding: 6px;
+      border-top: 1px solid rgba(255,255,255,0.02);
+      flex-shrink: 0;
+    }
+    #messageInput {
+      flex: 1;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.2);
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+
+    /* Overlays */
+    .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 60; background: rgba(0,0,0,0.85); }
+    .overlay.hidden { display: none !important; }
+    .call-card { width: 92%; max-width: 700px; padding: 16px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .call-videos { position: relative; width: 100%; height: 320px; background: #000; border-radius: 12px; overflow: hidden; }
+    .call-videos video { width: 100%; height: 100%; object-fit: cover; }
+    .call-videos .local { position: absolute; right: 10px; bottom: 10px; width: 100px; height: 130px; border-radius: 8px; border: 2px solid var(--neon); background: #111; z-index: 2; }
+    .call-actions { display: flex; gap: 10px; margin-top: 6px; }
+    .ctrl { width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); color: var(--text); cursor: pointer; font-size: 18px; }
+    .ctrl.danger { background: #ff5b6f; color: #fff; }
+
+    .incoming-card { padding: 20px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; gap: 12px; }
+    .incoming-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* 📱 Mobile Specific Layout Fixes */
+    @media (max-width: 768px) {
+      .main {
+        flex-direction: column;
+        gap: 6px;
+      }
+      .left-panel {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        gap: 6px;
+      }
+      .controls { flex-wrap: nowrap; }
+      .snap-area {
+        position: fixed;
+        top: 60px;
+        left: 8px;
+        right: 8px;
+        z-index: 50;
+        background: #000;
+      }
+      .chat-box { padding: 4px; }
+    }
   </style>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -115,7 +225,7 @@
   <div id="app">
     <header class="topbar glass">
       <div class="brand">Aurora Snap</div>
-      <div class="top-right" style="display: flex; gap: 10px; align-items: center;">
+      <div style="display: flex; gap: 10px; align-items: center;">
         <div id="status" class="status">connecting...</div>
         <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">🌓</button>
       </div>
@@ -127,7 +237,7 @@
           <div id="myAvatar" class="avatar">Y</div>
           <div class="meta">
             <div id="myName" class="name">You</div>
-            <div id="myStatus" class="sub">Available</div>
+            <div id="myStatus" class="sub">Online: 1</div>
           </div>
         </div>
 
@@ -139,10 +249,10 @@
         </div>
 
         <div class="snap-area glass" id="snapArea" style="display:none;">
-          <div class="snap-head">Snap Camera</div>
+          <div style="font-weight:600; color:var(--muted); font-size:12px;">Snap Camera</div>
           <video id="snapVideo" autoplay muted playsinline></video>
           <canvas id="snapCanvas" hidden></canvas>
-          <div class="snap-actions" style="display: flex; gap: 6px; margin-top: 6px;">
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
             <button id="captureBtn" class="btn small neon">Capture</button>
             <button id="sendSnapBtn" class="btn small">Send</button>
             <button id="closeSnapBtn" class="btn small danger">Close</button>
@@ -154,24 +264,18 @@
         <div id="chatBox" class="chat-box" data-empty="No messages yet"></div>
 
         <div class="composer">
-          <div class="composer-left">
-            <button id="camBtn" class="icon-btn" title="Open Snap">📷</button>
-          </div>
-
-          <input id="messageInput" placeholder="Send a chat or press Enter" autocomplete="off" />
-
-          <div class="composer-right">
-            <button id="sendBtn" class="btn neon" title="Send message">➤</button>
-          </div>
+          <button id="camBtn" class="icon-btn" title="Open Snap">📷</button>
+          <input id="messageInput" placeholder="Send a chat..." autocomplete="off" />
+          <button id="sendBtn" class="btn neon" title="Send message">➤</button>
         </div>
       </section>
     </main>
 
     <div id="callOverlay" class="overlay hidden">
       <div class="call-card glass">
-        <div class="call-header">
+        <div style="display:flex; gap:10px; align-items:center; width:100%;">
           <div id="callAvatar" class="avatar large">C</div>
-          <div class="call-meta">
+          <div>
             <div id="callName" class="name">Peer</div>
             <div id="callState" class="sub">Connecting...</div>
           </div>
@@ -183,16 +287,16 @@
         </div>
 
         <div class="call-actions">
-          <button id="muteBtn" class="ctrl" title="Mute">🎙️</button>
-          <button id="cameraToggleBtn" class="ctrl" title="Toggle camera">📷</button>
-          <button id="hangupBtn" class="ctrl danger" title="End call">🛑</button>
+          <button id="muteBtn" class="ctrl">🎙️</button>
+          <button id="cameraToggleBtn" class="ctrl">📷</button>
+          <button id="hangupBtn" class="ctrl danger">🛑</button>
         </div>
       </div>
     </div>
 
     <div id="incoming" class="overlay hidden">
       <div class="incoming-card glass">
-        <div id="incomingText" style="font-size: 18px; font-weight: 600;">Incoming call...</div>
+        <div id="incomingText" style="font-size: 16px; font-weight: 600;">Incoming call...</div>
         <div class="incoming-actions">
           <button id="answerBtn" class="btn neon">Answer</button>
           <button id="declineBtn" class="btn danger">Decline</button>
@@ -246,14 +350,14 @@
       let isCalling = false;
       let incomingSignalData = null;
 
-      function appendMessage({ from='me', fromName=null, text='', attachment=null, ts=Date.now() }){
-        const isMe = (from === 'me' || from === socket.id);
+      function appendMessage({ senderId, fromName, text='', attachment=null, ts=Date.now() }){
+        const isMe = (senderId === socket.id);
         const el = document.createElement('div');
         el.className = 'msg ' + (isMe ? 'right' : 'left');
         
         const meta = document.createElement('div');
         meta.className = 'meta';
-        meta.textContent = `${isMe ? 'You' : (fromName || 'Peer')} • ${new Date(ts).toLocaleTimeString()}`;
+        meta.textContent = `${isMe ? 'You' : (fromName || 'Peer')} • ${new Date(ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         el.appendChild(meta);
 
         if(text){
@@ -290,13 +394,12 @@
         });
       }
 
-      // Send message
       function sendMessage(){
         const txt = (messageInput.value || '').trim();
         if(!txt) return;
         const payload = { text: txt, ts: Date.now() };
         socket.emit('send_message', payload);
-        appendMessage({ from: 'me', text: txt, ts: payload.ts });
+        appendMessage({ senderId: socket.id, text: txt, ts: payload.ts });
         messageInput.value = '';
       }
 
@@ -308,7 +411,6 @@
         }
       });
 
-      // File attachment
       attachBtn.addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
@@ -316,11 +418,10 @@
         const data = await readFileAsDataURL(file);
         const attachment = { name: file.name, type: file.type, data };
         socket.emit('send_message', { attachment, ts: Date.now() });
-        appendMessage({ from: 'me', attachment, ts: Date.now() });
+        appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
         fileInput.value = '';
       });
 
-      // Snap Camera
       const toggleSnap = async () => {
         if(snapArea.style.display === 'flex'){
           closeSnap();
@@ -357,7 +458,7 @@
         const data = snapCanvas.toDataURL('image/png');
         const attachment = { name: 'snap.png', type: 'image/png', data };
         socket.emit('send_message', { attachment, ts: Date.now() });
-        appendMessage({ from: 'me', attachment, ts: Date.now() });
+        appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
         closeSnap();
       });
 
@@ -375,7 +476,6 @@
 
       themeToggle.addEventListener('click', () => document.documentElement.classList.toggle('light'));
 
-      // Socket Events
       socket.on('connect', () => {
         statusEl.textContent = 'online';
         statusEl.style.color = '#00ff9d';
@@ -392,15 +492,14 @@
 
       socket.on('receive_message', (payload) => {
         appendMessage({
-          from: payload.from === socket.id ? 'me' : payload.from,
-          fromName: payload.fromName || 'Peer',
+          senderId: payload.from,
+          fromName: payload.fromName,
           text: payload.text,
           attachment: payload.attachment,
           ts: payload.ts
         });
       });
 
-      // Video Call Logic
       startCallBtn.addEventListener('click', async () => {
         if(isCalling) return;
         try{
