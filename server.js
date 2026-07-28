@@ -51,6 +51,14 @@ io.on('connection', (socket) => {
     socket.on('error', (err) => {
         console.error(`Socket error (${socket.id}):`, err);
     });
+    // The cause of a transport-level failure (notably 'Max payload size
+    // exceeded' for a payload above maxHttpBufferSize) is only carried here;
+    // the 'disconnect' event just reports an unexplained 'transport error'.
+    socket.conn.on('close', (reason, description) => {
+        if (description) {
+            console.error(`Transport closed for ${socket.id} (${reason}):`, description.message || description);
+        }
+    });
 
     // ইউজার কাউন্ট পাঠানো
     io.to('chat-room').emit('user_count_update', onlineUsers);

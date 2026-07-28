@@ -698,6 +698,27 @@
       // the server's maxHttpBufferSize so oversized files fail loudly here
       // instead of dropping the socket connection mid-transfer.
       const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+      // Socket.IO's maxHttpBufferSize on the server; exceeding it closes the
+      // transport with no error event, so nothing would report the loss.
+      const MAX_EMIT_BYTES = 12 * 1024 * 1024;
+
+      // Refuses to emit a payload the server transport would drop, and reports
+      // it, instead of losing the message to a silent reconnect.
+      function emitOrReport(event, payload, what){
+        let size;
+        try{
+          size = new Blob([JSON.stringify(payload)]).size;
+        }catch(err){
+          reportError(`Could not send ${what}`, err);
+          return false;
+        }
+        if(size >= MAX_EMIT_BYTES){
+          reportError(`Could not send ${what}`, new Error(`Payload is too large (${Math.round(size / (1024*1024))} MB, max ${Math.round(MAX_EMIT_BYTES / (1024*1024))} MB)`));
+          return false;
+        }
+        socket.emit(event, payload);
+        return true;
+      }
 
       function reportError(message, err){
         if(err) console.error(message, err);
@@ -758,6 +779,14 @@
         if(attachment){
           if(attachment.type && attachment.type.startsWith('image')){
             const img = document.createElement('img');
+            // An undecodable data URL would otherwise render as an empty bubble.
+            img.onerror = () => {
+              console.error('Attachment image failed to load:', attachment.name);
+              const failed = document.createElement('div');
+              failed.textContent = `\u26a0\ufe0f Image failed to load${attachment.name ? ` (${attachment.name})` : ''}`;
+              failed.style.color = '#ff5b6f';
+              img.replaceWith(failed);
+            };
             img.src = attachment.data;
             el.appendChild(img);
           } else {
@@ -796,7 +825,7 @@
           return;
         }
         const payload = { text: txt, ts: Date.now() };
-        socket.emit('send_message', payload);
+        if(!emitOrReport('send_message', payload, 'message')) return;
         appendMessage({ senderId: socket.id, text: txt, ts: payload.ts });
         messageInput.value = '';
         emojiContainer.classList.remove('active');
@@ -823,7 +852,7 @@
           }
           const data = await readFileAsDataURL(file);
           const attachment = { name: file.name, type: file.type, data };
-          socket.emit('send_message', { attachment, ts: Date.now() });
+          if(!emitOrReport('send_message', { attachment, ts: Date.now() }, 'attachment')) return;
           appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
         }catch(err){
           reportError('Could not send attachment', err);
@@ -880,7 +909,7 @@
           }
           const data = snapCanvas.toDataURL('image/png');
           const attachment = { name: 'snap.png', type: 'image/png', data };
-          socket.emit('send_message', { attachment, ts: Date.now() });
+          if(!emitOrReport('send_message', { attachment, ts: Date.now() }, 'snap')) return;
           appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
           closeSnap();
         }catch(err){
@@ -911,6 +940,8 @@
         console.warn('Disconnected from chat server:', reason);
         statusEl.textContent = 'offline';
         statusEl.style.color = '#ff5b6f';
+        // The last known count is meaningless once we stop receiving updates.
+        document.getElementById('myStatus').textContent = 'Online: —';
       });
 
       // Without these the connection can fail permanently while the UI still
