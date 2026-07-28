@@ -4,11 +4,25 @@
   "description": "Signaling server for Aurora Snap demo (Express + Socket.IO)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "server.js",
+      "index.js"
+    ]
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "socket.io-client": "^4.7.5",
+    "supertest": "^6.3.4"
   }
 }
