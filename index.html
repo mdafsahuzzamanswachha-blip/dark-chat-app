@@ -145,8 +145,8 @@
       gap: 10px;
       position: relative;
       min-height: 0;
-      
-      /* 🖼️ GitHub-e thaka bg.jpeg pic-ti dynamic bhabe set kora hoilo */
+
+      /* GitHub bg.jpeg set as dynamic background */
       background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('bg.jpeg');
       background-size: cover;
       background-position: center;
@@ -363,6 +363,10 @@
         { urls: 'stun:stun3.l.google.com:19302' },
         { urls: 'stun:stun4.l.google.com:19302' },
         { urls: 'stun:global.stun.twilio.com:3478' }
+        // NOTE: STUN-only works when both people are on open networks.
+        // If calls still fail on mobile data / office wifi, add a TURN
+        // server here too, e.g.:
+        // { urls: 'turn:your-turn-server.com:3478', username: 'user', credential: 'pass' }
       ]
     };
 
@@ -404,7 +408,7 @@
       let isCalling = false;
       let incomingSignalData = null;
 
-      // 😀 Emoji Picker Initialization
+      // Emoji Picker Initialization
       if (window.picmo) {
         const picker = picmo.createPicker({
           rootElement: emojiContainer,
@@ -432,7 +436,7 @@
         const isMe = (senderId === socket.id);
         const el = document.createElement('div');
         el.className = 'msg ' + (isMe ? 'right' : 'left');
-        
+
         const meta = document.createElement('div');
         meta.className = 'meta';
         meta.textContent = `${isMe ? 'You' : (fromName || 'Peer')} • ${new Date(ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
@@ -630,10 +634,17 @@
         endCall();
       });
 
+      // FIX: trickle set to false so SimplePeer emits ONE combined signal
+      // (SDP + all ICE candidates) instead of many signal events over time.
+      // Your socket events (call_user / incoming_call / answer_call /
+      // call_accepted) only ever send/receive a single signal each, so with
+      // trickle:true most of the connection info (ICE candidates found after
+      // the first signal) was being silently dropped, which is why calls
+      // would ring but never actually connect.
       function startPeer(initiator){
         peer = new SimplePeer({
           initiator: initiator,
-          trickle: true,
+          trickle: false,
           stream: localStream,
           config: peerConfig
         });
@@ -688,6 +699,8 @@
         }
       });
 
+      // FIX: clear the stale incoming signal on hangup so a later call
+      // doesn't accidentally reuse an old/expired signal.
       function endCall(){
         if(peer){
           try{ peer.destroy(); }catch(e){}
@@ -697,6 +710,7 @@
           localStream.getTracks().forEach(t => t.stop());
           localStream = null;
         }
+        incomingSignalData = null;
         remoteVideo.srcObject = null;
         localVideoEl.srcObject = null;
         isCalling = false;
