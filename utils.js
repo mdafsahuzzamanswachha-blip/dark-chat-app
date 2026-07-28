@@ -11,10 +11,12 @@
   const hideOverlay = (el) => el.classList.add('hidden');
 
   // Toggles `panel` via `.active` when `btn` is clicked and closes it on any
-  // outside click. Used by the emoji picker and the "More" menu.
-  function bindDismissablePanel(btn, panel) {
+  // outside click. Used by the emoji picker and the "More" menu. `canOpen`
+  // may veto opening (e.g. when the emoji picker failed to load).
+  function bindDismissablePanel(btn, panel, canOpen) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (canOpen && !canOpen()) return;
       panel.classList.toggle('active');
     });
     document.addEventListener('click', (e) => {
@@ -28,19 +30,23 @@
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.onerror = () => reject(reader.error || new Error('Could not read the selected file'));
+      reader.onabort = () => reject(new Error('Reading the selected file was aborted'));
+      try {
+        reader.readAsDataURL(file);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
-  // Requests media, alerting the user on failure and returning null.
-  async function requestMedia(constraints, errorLabel) {
-    try {
-      return await navigator.mediaDevices.getUserMedia(constraints);
-    } catch (err) {
-      alert(errorLabel + ': ' + err.message);
-      return null;
+  // Requests media, throwing a descriptive error when the API is unavailable
+  // (e.g. served over plain HTTP) so callers can report it uniformly.
+  function getMedia(constraints, what) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error(`${what} access is not supported in this browser (requires HTTPS)`);
     }
+    return navigator.mediaDevices.getUserMedia(constraints);
   }
 
   function stopStream(stream) {
@@ -64,7 +70,7 @@
     hideOverlay,
     bindDismissablePanel,
     readFileAsDataURL,
-    requestMedia,
+    getMedia,
     stopStream,
     toggleTrack
   };
