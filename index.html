@@ -499,6 +499,7 @@
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/picmo@5.8.5/dist/umd/index.js"></script>
+  <script src="utils.js"></script>
 </head>
 <body>
   <div id="app">
@@ -656,6 +657,11 @@
       ]
     };
 
+    const {
+      byId, setText, showOverlay, hideOverlay, bindDismissablePanel,
+      readFileAsDataURL, requestMedia, stopStream, toggleTrack
+    } = window.DarkChat;
+
     window.addEventListener('DOMContentLoaded', () => {
       const socket = io("https://dark-chat-backend-2v8y.onrender.com");
 
@@ -706,16 +712,7 @@
           messageInput.focus();
         });
 
-        emojiBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          emojiContainer.classList.toggle('active');
-        });
-
-        document.addEventListener('click', (e) => {
-          if (!emojiContainer.contains(e.target) && e.target !== emojiBtn) {
-            emojiContainer.classList.remove('active');
-          }
-        });
+        bindDismissablePanel(emojiBtn, emojiContainer);
       }
 
       function appendMessage({ senderId, fromName, text='', attachment=null, ts=Date.now() }){
@@ -753,13 +750,10 @@
         chatBox.scrollTop = chatBox.scrollHeight;
       }
 
-      function readFileAsDataURL(file){
-        return new Promise((res, rej) => {
-          const r = new FileReader();
-          r.onload = () => res(r.result);
-          r.onerror = rej;
-          r.readAsDataURL(file);
-        });
+      function sendAttachment(attachment){
+        const ts = Date.now();
+        socket.emit('send_message', { attachment, ts });
+        appendMessage({ senderId: socket.id, attachment, ts });
       }
 
       function sendMessage(){
@@ -785,9 +779,7 @@
         const file = e.target.files && e.target.files[0];
         if(!file) return;
         const data = await readFileAsDataURL(file);
-        const attachment = { name: file.name, type: file.type, data };
-        socket.emit('send_message', { attachment, ts: Date.now() });
-        appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
+        sendAttachment({ name: file.name, type: file.type, data });
         fileInput.value = '';
       });
 
@@ -797,15 +789,14 @@
           return;
         }
         snapArea.style.display = 'flex';
-        try{
-          const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-          snapVideo.srcObject = s;
-          snapVideo.play();
-          snapArea._stream = s;
-        }catch(err){
-          alert('Camera error: ' + err.message);
+        const s = await requestMedia({ video: true, audio: false }, 'Camera error');
+        if(!s){
           snapArea.style.display = 'none';
+          return;
         }
+        snapVideo.srcObject = s;
+        snapVideo.play();
+        snapArea._stream = s;
       };
 
       openSnap.addEventListener('click', toggleSnap);
@@ -825,19 +816,15 @@
       sendSnapBtn.addEventListener('click', () => {
         if(snapCanvas.hidden) return alert('Capture a snap first!');
         const data = snapCanvas.toDataURL('image/png');
-        const attachment = { name: 'snap.png', type: 'image/png', data };
-        socket.emit('send_message', { attachment, ts: Date.now() });
-        appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
+        sendAttachment({ name: 'snap.png', type: 'image/png', data });
         closeSnap();
       });
 
       closeSnapBtn.addEventListener('click', closeSnap);
 
       function closeSnap(){
-        if(snapArea._stream){
-          snapArea._stream.getTracks().forEach(t => t.stop());
-          snapArea._stream = null;
-        }
+        stopStream(snapArea._stream);
+        snapArea._stream = null;
         snapVideo.srcObject = null;
         snapCanvas.hidden = true;
         snapArea.style.display = 'none';
@@ -855,9 +842,7 @@
         statusEl.style.color = '#ff5b6f';
       });
 
-      socket.on('user_count_update', (count) => {
-        document.getElementById('myStatus').textContent = `Online: ${count}`;
-      });
+      socket.on('user_count_update', (count) => setText('myStatus', `Online: ${count}`));
 
       socket.on('receive_message', (payload) => {
         appendMessage({
@@ -869,41 +854,36 @@
         });
       });
 
-      startCallBtn.addEventListener('click', async () => {
+      const setCallState = (msg) => setText('callState', msg);
+
+      async function beginCall(initiator, state){
+        localStream = await requestMedia({ audio: true, video: true }, 'Camera/Mic error');
+        if(!localStream) return;
+        localVideoEl.srcObject = localStream;
+        showOverlay(callOverlay);
+        if(state) setCallState(state);
+        isCalling = true;
+        startPeer(initiator);
+      }
+
+      startCallBtn.addEventListener('click', () => {
         if(isCalling) return;
-        try{
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-          localVideoEl.srcObject = localStream;
-          callOverlay.classList.remove('hidden');
-          document.getElementById('callState').textContent = 'Calling...';
-          isCalling = true;
-          startPeer(true);
-        }catch(err){
-          alert('Camera/Mic permission error: ' + err.message);
-        }
+        beginCall(true, 'Calling...');
       });
 
       socket.on('incoming_call', (data) => {
         incomingSignalData = data.signal;
-        incoming.classList.remove('hidden');
-        document.getElementById('incomingText').textContent = `${data.callerName || 'Peer'} is calling...`;
+        showOverlay(incoming);
+        setText('incomingText', `${data.callerName || 'Peer'} is calling...`);
       });
 
-      answerBtn.onclick = async () => {
-        incoming.classList.add('hidden');
-        try{
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-          localVideoEl.srcObject = localStream;
-          callOverlay.classList.remove('hidden');
-          isCalling = true;
-          startPeer(false);
-        }catch(err){
-          alert('Camera/Mic error: ' + err.message);
-        }
+      answerBtn.onclick = () => {
+        hideOverlay(incoming);
+        beginCall(false);
       };
 
       declineBtn.onclick = () => {
-        incoming.classList.add('hidden');
+        hideOverlay(incoming);
         socket.emit('decline_call');
       };
 
@@ -911,7 +891,7 @@
         if(peer){
           peer.signal(signal);
         }
-        document.getElementById('callState').textContent = 'Connected';
+        setCallState('Connected');
       });
 
       socket.on('call_ended', () => endCall());
@@ -949,12 +929,12 @@
 
         peer.on('stream', stream => {
           remoteVideo.srcObject = stream;
-          document.getElementById('callState').textContent = 'Connected';
+          setCallState('Connected');
         });
 
         peer.on('error', err => {
           console.error('Peer error:', err);
-          document.getElementById('callState').textContent = 'Connection failed';
+          setCallState('Connection failed');
         });
 
         peer.on('close', () => endCall());
@@ -965,25 +945,8 @@
         endCall();
       });
 
-      muteBtn.addEventListener('click', () => {
-        if(!localStream) return;
-        const audioTrack = localStream.getAudioTracks()[0];
-        if(audioTrack){
-          audioTrack.enabled = !audioTrack.enabled;
-          muteBtn.classList.toggle('active', !audioTrack.enabled);
-          muteBtn.textContent = audioTrack.enabled ? '🎙️' : '🔇';
-        }
-      });
-
-      cameraToggleBtn.addEventListener('click', () => {
-        if(!localStream) return;
-        const videoTrack = localStream.getVideoTracks()[0];
-        if(videoTrack){
-          videoTrack.enabled = !videoTrack.enabled;
-          cameraToggleBtn.classList.toggle('active', !videoTrack.enabled);
-          cameraToggleBtn.textContent = videoTrack.enabled ? '📷' : '🚫';
-        }
-      });
+      muteBtn.addEventListener('click', () => toggleTrack(localStream, 'audio', muteBtn, '🎙️', '🔇'));
+      cameraToggleBtn.addEventListener('click', () => toggleTrack(localStream, 'video', cameraToggleBtn, '📷', '🚫'));
 
       // FIX: clear the stale incoming signal on hangup so a later call
       // doesn't accidentally reuse an old/expired signal.
@@ -992,16 +955,14 @@
           try{ peer.destroy(); }catch(e){}
           peer = null;
         }
-        if(localStream){
-          localStream.getTracks().forEach(t => t.stop());
-          localStream = null;
-        }
+        stopStream(localStream);
+        localStream = null;
         incomingSignalData = null;
         remoteVideo.srcObject = null;
         localVideoEl.srcObject = null;
         isCalling = false;
-        callOverlay.classList.add('hidden');
-        incoming.classList.add('hidden');
+        hideOverlay(callOverlay);
+        hideOverlay(incoming);
       }
 
       /* ================= GAMES (multiplayer only — play with your chat partner) ================= */
@@ -1014,31 +975,21 @@
       const gamesTitle = document.getElementById('gamesTitle');
       const gameScreens = document.querySelectorAll('.game-screen');
 
-      moreBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        moreMenu.classList.toggle('active');
-      });
-      document.addEventListener('click', (e) => {
-        if(!moreMenu.contains(e.target) && e.target !== moreBtn){
-          moreMenu.classList.remove('active');
-        }
-      });
+      bindDismissablePanel(moreBtn, moreMenu);
 
       function showGameScreen(id, title){
         gameScreens.forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        byId(id).classList.add('active');
         gamesTitle.textContent = title || 'Games';
         gamesBackBtn.classList.toggle('show', id !== 'gameLauncher');
       }
 
       openGamesBtn.addEventListener('click', () => {
         moreMenu.classList.remove('active');
-        gamesOverlay.classList.remove('hidden');
+        showOverlay(gamesOverlay);
         showGameScreen('gameLauncher', 'Games');
       });
-      gamesCloseBtn.addEventListener('click', () => {
-        gamesOverlay.classList.add('hidden');
-      });
+      gamesCloseBtn.addEventListener('click', () => hideOverlay(gamesOverlay));
       gamesBackBtn.addEventListener('click', () => {
         showGameScreen('gameLauncher', 'Games');
       });
@@ -1072,13 +1023,18 @@
       const tttResetBtn = document.getElementById('tttResetBtn');
       let tttBoard, tttTurn, tttMySymbol, tttOver;
 
-      function tttStart(){
+      function tttReset(mySymbol, status){
         tttBoard = Array(9).fill(null);
         tttTurn = 'X';
-        tttMySymbol = 'X'; // whoever opens/starts the game is X, their friend is O
+        tttMySymbol = mySymbol;
         tttOver = false;
         tttRender();
-        tttSetStatus('Your turn (X) — friend plays O');
+        tttSetStatus(status);
+      }
+
+      function tttStart(){
+        // whoever opens/starts the game is X, their friend is O
+        tttReset('X', 'Your turn (X) — friend plays O');
         sendGame('ttt_reset', {});
       }
 
@@ -1093,7 +1049,17 @@
         });
       }
 
-      function tttSetStatus(msg){ tttStatusEl.textContent = msg; }
+      function tttSetStatus(msg){ setText(tttStatusEl, msg); }
+
+      // Renders the board and reports whether the game just ended.
+      function tttAfterMove(){
+        tttRender();
+        const w = tttWinner(tttBoard);
+        if(!w) return false;
+        tttOver = true;
+        tttSetStatus(w === 'draw' ? "It's a draw!" : `${w} wins!`);
+        return true;
+      }
 
       function tttWinner(board){
         const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -1109,37 +1075,21 @@
         if(tttTurn !== tttMySymbol) return; // not your turn
         tttBoard[i] = tttTurn;
         sendGame('ttt_move', { i, mark: tttTurn });
-        tttRender();
-        const w = tttWinner(tttBoard);
-        if(w){
-          tttOver = true;
-          tttSetStatus(w === 'draw' ? "It's a draw!" : `${w} wins!`);
-          return;
-        }
+        if(tttAfterMove()) return;
         tttTurn = tttTurn === 'X' ? 'O' : 'X';
         tttSetStatus("Friend's turn");
       }
 
       function tttOnRemoteMove(data){
         tttBoard[data.i] = data.mark;
-        tttRender();
-        const w = tttWinner(tttBoard);
-        if(w){
-          tttOver = true;
-          tttSetStatus(w === 'draw' ? "It's a draw!" : `${w} wins!`);
-          return;
-        }
+        if(tttAfterMove()) return;
         tttTurn = data.mark === 'X' ? 'O' : 'X';
         tttSetStatus(tttTurn === tttMySymbol ? 'Your turn' : "Friend's turn");
       }
 
       function tttOnRemoteReset(){
-        tttBoard = Array(9).fill(null);
-        tttTurn = 'X';
-        tttMySymbol = 'O'; // whoever receives the reset plays O
-        tttOver = false;
-        tttRender();
-        tttSetStatus("Friend's turn (X)");
+        // whoever receives the reset plays O
+        tttReset('O', "Friend's turn (X)");
       }
 
       tttResetBtn.addEventListener('click', tttStart);
@@ -1151,22 +1101,24 @@
       const rpsResetBtn = document.getElementById('rpsResetBtn');
       let rpsMyChoice, rpsOppChoice;
       const RPS_EMOJI = { rock: '✊', paper: '✋', scissors: '✌️' };
+      const rpsButtons = () => rpsChoicesEl.querySelectorAll('.rps-choice');
+      const rpsSetChoicesDisabled = (disabled) => rpsButtons().forEach(b => b.disabled = disabled);
 
       function rpsStart(){
         rpsMyChoice = null;
         rpsOppChoice = null;
         rpsResultEl.innerHTML = '';
-        rpsChoicesEl.querySelectorAll('.rps-choice').forEach(b => b.disabled = false);
+        rpsSetChoicesDisabled(false);
         rpsSetStatus('Pick your move — waiting for your friend too');
       }
 
-      function rpsSetStatus(msg){ rpsStatusEl.textContent = msg; }
+      function rpsSetStatus(msg){ setText(rpsStatusEl, msg); }
 
-      rpsChoicesEl.querySelectorAll('.rps-choice').forEach(btn => {
+      rpsButtons().forEach(btn => {
         btn.addEventListener('click', () => {
           if(rpsMyChoice) return;
           rpsMyChoice = btn.dataset.choice;
-          rpsChoicesEl.querySelectorAll('.rps-choice').forEach(b => b.disabled = true);
+          rpsSetChoicesDisabled(true);
           sendGame('rps_choice', { choice: rpsMyChoice });
           rpsSetStatus('Waiting for your friend...');
           rpsMaybeReveal();
