@@ -336,6 +336,131 @@
     .incoming-actions .label { font-size: 12px; color: var(--muted); margin-top: 6px; }
     .incoming-btn-wrap { display: flex; flex-direction: column; align-items: center; }
 
+    /* More menu */
+    .more-wrap { position: relative; }
+    .more-menu {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 0;
+      min-width: 160px;
+      background: #0b1220;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 6px;
+      z-index: 40;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .more-menu.active { display: block; }
+    .more-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      text-align: left;
+    }
+    .more-menu-item:hover { background: rgba(255,255,255,0.06); }
+
+    /* Games full-screen overlay */
+    #gamesOverlay { background: rgba(2,4,8,0.97); }
+    .games-card {
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(1000px 600px at 50% 0%, rgba(0,229,255,0.05), transparent 60%), #05070a;
+    }
+    .games-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+    .games-topbar #gamesTitle { font-weight: 700; font-size: 16px; }
+    .back-btn { display: none; }
+    .back-btn.show { display: inline-flex; }
+    .games-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .game-screen { display: none; }
+    .game-screen.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    #gameLauncher.active { display: block; }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .game-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 22px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.1));
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .game-tile:hover { border-color: rgba(0,255,157,0.4); transform: translateY(-2px); }
+    .game-tile .emoji { font-size: 30px; }
+
+    /* Tic Tac Toe */
+    .ttt-board {
+      display: grid;
+      grid-template-columns: repeat(3, 84px);
+      grid-template-rows: repeat(3, 84px);
+      gap: 6px;
+    }
+    .ttt-cell {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--neon);
+    }
+    .ttt-cell.o { color: var(--cyan); }
+    .ttt-cell:hover { background: rgba(255,255,255,0.08); }
+    .game-status { font-size: 14px; color: var(--muted); text-align: center; }
+    .game-actions { display: flex; gap: 8px; }
+
+    /* Rock Paper Scissors */
+    .rps-choices { display: flex; gap: 14px; }
+    .rps-choice {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      font-size: 28px;
+      cursor: pointer;
+    }
+    .rps-choice:hover { border-color: var(--neon); }
+    .rps-choice:disabled { opacity: 0.4; cursor: default; }
+    .rps-result { display: flex; gap: 30px; align-items: center; font-size: 40px; min-height: 60px; }
+    .rps-vs { color: var(--muted); font-size: 14px; text-align: center; }
+
     /* Mobile Specific Layout Fixes */
     @media (max-width: 768px) {
       .main {
@@ -365,6 +490,9 @@
         right: 0;
         bottom: 60px;
       }
+      .ttt-board { grid-template-columns: repeat(3, 26vw); grid-template-rows: repeat(3, 26vw); }
+      .ttt-cell { font-size: 8vw; }
+      .games-body { padding: 14px; }
     }
   </style>
 
@@ -400,6 +528,12 @@
           <input id="fileInput" type="file" accept="image/*,audio/*,video/*,*/*" hidden>
           <button id="attach" class="btn small">Attach</button>
           <button id="startCallBtn" class="btn small neon">Call</button>
+          <div class="more-wrap">
+            <button id="moreBtn" class="btn small">⋯ More</button>
+            <div id="moreMenu" class="more-menu">
+              <button id="openGamesBtn" class="more-menu-item">🎮 Games</button>
+            </div>
+          </div>
         </div>
 
         <div class="snap-area glass" id="snapArea" style="display:none;">
@@ -464,6 +598,41 @@
           <div class="incoming-btn-wrap">
             <button id="answerBtn" class="ctrl" style="background: linear-gradient(90deg,var(--neon),var(--cyan)); color:#001018;" title="Answer">📞</button>
             <div class="label">Answer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gamesOverlay" class="overlay hidden">
+      <div class="games-card">
+        <div class="games-topbar">
+          <button id="gamesBackBtn" class="icon-btn back-btn" title="Back">←</button>
+          <div id="gamesTitle">Games</div>
+          <button id="gamesCloseBtn" class="icon-btn" title="Close">✕</button>
+        </div>
+        <div class="games-body">
+          <div id="gameLauncher" class="game-screen active">
+            <div class="games-grid">
+              <button class="game-tile" data-game="ttt-multi"><span class="emoji">❌⭕</span>Tic-Tac-Toe<br><span style="color:var(--muted);font-size:11px;">vs Friend</span></button>
+              <button class="game-tile" data-game="rps-multi"><span class="emoji">✊✋✌️</span>Rock Paper Scissors<br><span style="color:var(--muted);font-size:11px;">vs Friend</span></button>
+            </div>
+          </div>
+
+          <div id="gameTTT" class="game-screen">
+            <div id="tttStatus" class="game-status">Your turn (X)</div>
+            <div id="tttBoard" class="ttt-board"></div>
+            <div class="game-actions"><button id="tttResetBtn" class="btn small neon">Restart</button></div>
+          </div>
+
+          <div id="gameRPS" class="game-screen">
+            <div id="rpsStatus" class="game-status">Pick your move</div>
+            <div id="rpsResult" class="rps-result"></div>
+            <div id="rpsChoices" class="rps-choices">
+              <button class="rps-choice" data-choice="rock">✊</button>
+              <button class="rps-choice" data-choice="paper">✋</button>
+              <button class="rps-choice" data-choice="scissors">✌️</button>
+            </div>
+            <div class="game-actions"><button id="rpsResetBtn" class="btn small neon">Play Again</button></div>
           </div>
         </div>
       </div>
@@ -834,6 +1003,209 @@
         callOverlay.classList.add('hidden');
         incoming.classList.add('hidden');
       }
+
+      /* ================= GAMES (multiplayer only — play with your chat partner) ================= */
+      const moreBtn = document.getElementById('moreBtn');
+      const moreMenu = document.getElementById('moreMenu');
+      const openGamesBtn = document.getElementById('openGamesBtn');
+      const gamesOverlay = document.getElementById('gamesOverlay');
+      const gamesBackBtn = document.getElementById('gamesBackBtn');
+      const gamesCloseBtn = document.getElementById('gamesCloseBtn');
+      const gamesTitle = document.getElementById('gamesTitle');
+      const gameScreens = document.querySelectorAll('.game-screen');
+
+      moreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moreMenu.classList.toggle('active');
+      });
+      document.addEventListener('click', (e) => {
+        if(!moreMenu.contains(e.target) && e.target !== moreBtn){
+          moreMenu.classList.remove('active');
+        }
+      });
+
+      function showGameScreen(id, title){
+        gameScreens.forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        gamesTitle.textContent = title || 'Games';
+        gamesBackBtn.classList.toggle('show', id !== 'gameLauncher');
+      }
+
+      openGamesBtn.addEventListener('click', () => {
+        moreMenu.classList.remove('active');
+        gamesOverlay.classList.remove('hidden');
+        showGameScreen('gameLauncher', 'Games');
+      });
+      gamesCloseBtn.addEventListener('click', () => {
+        gamesOverlay.classList.add('hidden');
+      });
+      gamesBackBtn.addEventListener('click', () => {
+        showGameScreen('gameLauncher', 'Games');
+      });
+
+      document.querySelectorAll('.game-tile').forEach(tile => {
+        tile.addEventListener('click', () => launchGame(tile.dataset.game));
+      });
+
+      function launchGame(game){
+        if(game === 'ttt-multi'){ tttStart(); showGameScreen('gameTTT', 'Tic-Tac-Toe · vs Friend'); }
+        else if(game === 'rps-multi'){ rpsStart(); showGameScreen('gameRPS', 'Rock Paper Scissors · vs Friend'); }
+      }
+
+      // --- Multiplayer relay ---
+      // Mirrors the existing send_message -> receive_message pattern.
+      // server.js relays these via: socket.on('send_game', d => socket.to('chat-room').emit('receive_game', d));
+      function sendGame(type, data){
+        socket.emit('send_game', { type, data, ts: Date.now() });
+      }
+      socket.on('receive_game', (payload) => {
+        if(!payload) return;
+        if(payload.type === 'ttt_move') tttOnRemoteMove(payload.data);
+        else if(payload.type === 'ttt_reset') tttOnRemoteReset();
+        else if(payload.type === 'rps_choice') rpsOnRemoteChoice(payload.data);
+        else if(payload.type === 'rps_reset') rpsOnRemoteReset();
+      });
+
+      /* ---------- Tic Tac Toe (2-player only) ---------- */
+      const tttBoardEl = document.getElementById('tttBoard');
+      const tttStatusEl = document.getElementById('tttStatus');
+      const tttResetBtn = document.getElementById('tttResetBtn');
+      let tttBoard, tttTurn, tttMySymbol, tttOver;
+
+      function tttStart(){
+        tttBoard = Array(9).fill(null);
+        tttTurn = 'X';
+        tttMySymbol = 'X'; // whoever opens/starts the game is X, their friend is O
+        tttOver = false;
+        tttRender();
+        tttSetStatus('Your turn (X) — friend plays O');
+        sendGame('ttt_reset', {});
+      }
+
+      function tttRender(){
+        tttBoardEl.innerHTML = '';
+        tttBoard.forEach((val, i) => {
+          const cell = document.createElement('div');
+          cell.className = 'ttt-cell' + (val === 'O' ? ' o' : '');
+          cell.textContent = val || '';
+          cell.addEventListener('click', () => tttHandleClick(i));
+          tttBoardEl.appendChild(cell);
+        });
+      }
+
+      function tttSetStatus(msg){ tttStatusEl.textContent = msg; }
+
+      function tttWinner(board){
+        const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        for(const [a,b,c] of lines){
+          if(board[a] && board[a] === board[b] && board[b] === board[c]) return board[a];
+        }
+        if(board.every(v => v)) return 'draw';
+        return null;
+      }
+
+      function tttHandleClick(i){
+        if(tttOver || tttBoard[i]) return;
+        if(tttTurn !== tttMySymbol) return; // not your turn
+        tttBoard[i] = tttTurn;
+        sendGame('ttt_move', { i, mark: tttTurn });
+        tttRender();
+        const w = tttWinner(tttBoard);
+        if(w){
+          tttOver = true;
+          tttSetStatus(w === 'draw' ? "It's a draw!" : `${w} wins!`);
+          return;
+        }
+        tttTurn = tttTurn === 'X' ? 'O' : 'X';
+        tttSetStatus("Friend's turn");
+      }
+
+      function tttOnRemoteMove(data){
+        tttBoard[data.i] = data.mark;
+        tttRender();
+        const w = tttWinner(tttBoard);
+        if(w){
+          tttOver = true;
+          tttSetStatus(w === 'draw' ? "It's a draw!" : `${w} wins!`);
+          return;
+        }
+        tttTurn = data.mark === 'X' ? 'O' : 'X';
+        tttSetStatus(tttTurn === tttMySymbol ? 'Your turn' : "Friend's turn");
+      }
+
+      function tttOnRemoteReset(){
+        tttBoard = Array(9).fill(null);
+        tttTurn = 'X';
+        tttMySymbol = 'O'; // whoever receives the reset plays O
+        tttOver = false;
+        tttRender();
+        tttSetStatus("Friend's turn (X)");
+      }
+
+      tttResetBtn.addEventListener('click', tttStart);
+
+      /* ---------- Rock Paper Scissors (2-player only) ---------- */
+      const rpsChoicesEl = document.getElementById('rpsChoices');
+      const rpsResultEl = document.getElementById('rpsResult');
+      const rpsStatusEl = document.getElementById('rpsStatus');
+      const rpsResetBtn = document.getElementById('rpsResetBtn');
+      let rpsMyChoice, rpsOppChoice;
+      const RPS_EMOJI = { rock: '✊', paper: '✋', scissors: '✌️' };
+
+      function rpsStart(){
+        rpsMyChoice = null;
+        rpsOppChoice = null;
+        rpsResultEl.innerHTML = '';
+        rpsChoicesEl.querySelectorAll('.rps-choice').forEach(b => b.disabled = false);
+        rpsSetStatus('Pick your move — waiting for your friend too');
+      }
+
+      function rpsSetStatus(msg){ rpsStatusEl.textContent = msg; }
+
+      rpsChoicesEl.querySelectorAll('.rps-choice').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if(rpsMyChoice) return;
+          rpsMyChoice = btn.dataset.choice;
+          rpsChoicesEl.querySelectorAll('.rps-choice').forEach(b => b.disabled = true);
+          sendGame('rps_choice', { choice: rpsMyChoice });
+          rpsSetStatus('Waiting for your friend...');
+          rpsMaybeReveal();
+        });
+      });
+
+      function rpsMaybeReveal(){
+        if(rpsMyChoice && rpsOppChoice) rpsReveal('Friend');
+      }
+
+      function rpsOnRemoteChoice(data){
+        rpsOppChoice = data.choice;
+        rpsMaybeReveal();
+      }
+
+      function rpsWinnerText(mine, theirs){
+        if(mine === theirs) return "It's a tie!";
+        const beats = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
+        return beats[mine] === theirs ? 'You win! 🎉' : 'You lose!';
+      }
+
+      function rpsReveal(oppLabel){
+        rpsResultEl.innerHTML = `
+          <div>${RPS_EMOJI[rpsMyChoice]}<div class="rps-vs">You</div></div>
+          <div class="rps-vs">vs</div>
+          <div>${RPS_EMOJI[rpsOppChoice]}<div class="rps-vs">${oppLabel}</div></div>
+        `;
+        rpsSetStatus(rpsWinnerText(rpsMyChoice, rpsOppChoice));
+      }
+
+      function rpsOnRemoteReset(){
+        rpsStart();
+      }
+
+      rpsResetBtn.addEventListener('click', () => {
+        sendGame('rps_reset', {});
+        rpsStart();
+      });
+      /* ================= END GAMES ================= */
     });
   })();
   </script>
