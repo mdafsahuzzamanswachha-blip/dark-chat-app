@@ -1,3 +1,3 @@
-// Alternate entrypoint kept for deployments that boot `index.js`.
-// The signaling server itself lives in lib/chatServer.js.
-require('./server');
+// Legacy entrypoint kept for hosts configured to run `node index.js`.
+// The hardened server implementation lives in server.js.
+require('./server.js');

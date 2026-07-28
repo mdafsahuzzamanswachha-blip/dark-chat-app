@@ -704,6 +704,38 @@
       // the server's maxHttpBufferSize so oversized files fail loudly here
       // instead of dropping the socket connection mid-transfer.
       const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+      const ALLOWED_ATTACHMENT_TYPES = ['image/png','image/jpeg','image/gif','image/webp','application/pdf','text/plain'];
+
+      // Attachments arrive from the peer, so only same-type base64 data URLs are
+      // accepted; anything else (javascript:, data:text/html, remote URLs) is dropped.
+      function safeAttachment(attachment){
+        if(!attachment || typeof attachment !== 'object') return null;
+        const { type, data, name } = attachment;
+        if(typeof type !== 'string' || !ALLOWED_ATTACHMENT_TYPES.includes(type)) return null;
+        if(typeof data !== 'string' || !data.startsWith(`data:${type};base64,`)) return null;
+        if(!/^[A-Za-z0-9+/]+={0,2}$/.test(data.slice(`data:${type};base64,`.length))) return null;
+        return { type, data, name: typeof name === 'string' ? name.slice(0, 40) : 'Attachment' };
+      // Socket.IO's maxHttpBufferSize on the server; exceeding it closes the
+      // transport with no error event, so nothing would report the loss.
+      const MAX_EMIT_BYTES = 12 * 1024 * 1024;
+
+      // Refuses to emit a payload the server transport would drop, and reports
+      // it, instead of losing the message to a silent reconnect.
+      function emitOrReport(event, payload, what){
+        let size;
+        try{
+          size = new Blob([JSON.stringify(payload)]).size;
+        }catch(err){
+          reportError(`Could not send ${what}`, err);
+          return false;
+        }
+        if(size >= MAX_EMIT_BYTES){
+          reportError(`Could not send ${what}`, new Error(`Payload is too large (${Math.round(size / (1024*1024))} MB, max ${Math.round(MAX_EMIT_BYTES / (1024*1024))} MB)`));
+          return false;
+        }
+        socket.emit(event, payload);
+        return true;
+      }
 
       function reportError(message, err){
         if(err) console.error(message, err);
@@ -752,16 +784,27 @@
           el.appendChild(p);
         }
 
-        if(attachment){
-          if(attachment.type && attachment.type.startsWith('image')){
+        const safe = safeAttachment(attachment);
+        if(safe){
+          if(safe.type.startsWith('image/')){
             const img = document.createElement('img');
+            // An undecodable data URL would otherwise render as an empty bubble.
+            img.onerror = () => {
+              console.error('Attachment image failed to load:', attachment.name);
+              const failed = document.createElement('div');
+              failed.textContent = `\u26a0\ufe0f Image failed to load${attachment.name ? ` (${attachment.name})` : ''}`;
+              failed.style.color = '#ff5b6f';
+              img.replaceWith(failed);
+            };
             img.src = attachment.data;
             el.appendChild(img);
           } else {
             const a = document.createElement('a');
-            a.href = attachment.data;
-            a.textContent = attachment.name || 'Attachment';
+            a.href = safe.data;
+            a.textContent = safe.name || 'Attachment';
             a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.download = safe.name || 'attachment';
             a.style.color = '#00ff9d';
             el.appendChild(a);
           }
@@ -789,7 +832,7 @@
           return;
         }
         const payload = { text: txt, ts: Date.now() };
-        socket.emit('send_message', payload);
+        if(!emitOrReport('send_message', payload, 'message')) return;
         appendMessage({ senderId: socket.id, text: txt, ts: payload.ts });
         messageInput.value = '';
         emojiContainer.classList.remove('active');
@@ -889,6 +932,8 @@
         console.warn('Disconnected from chat server:', reason);
         statusEl.textContent = 'offline';
         statusEl.style.color = '#ff5b6f';
+        // The last known count is meaningless once we stop receiving updates.
+        document.getElementById('myStatus').textContent = 'Online: —';
       });
 
       // Without these the connection can fail permanently while the UI still
@@ -1257,7 +1302,7 @@
       }
 
       function rpsOnRemoteChoice(data){
-        if(!data || !RPS_EMOJI[data.choice]){
+        if(!data || !Object.prototype.hasOwnProperty.call(RPS_EMOJI, data.choice)){
           throw new Error(`Invalid rock-paper-scissors choice: ${JSON.stringify(data)}`);
         }
         rpsOppChoice = data.choice;
@@ -1271,11 +1316,22 @@
       }
 
       function rpsReveal(oppLabel){
-        rpsResultEl.innerHTML = `
-          <div>${RPS_EMOJI[rpsMyChoice]}<div class="rps-vs">You</div></div>
-          <div class="rps-vs">vs</div>
-          <div>${RPS_EMOJI[rpsOppChoice]}<div class="rps-vs">${oppLabel}</div></div>
-        `;
+        rpsResultEl.textContent = '';
+        const side = (emoji, label) => {
+          const wrap = document.createElement('div');
+          wrap.textContent = emoji;
+          const caption = document.createElement('div');
+          caption.className = 'rps-vs';
+          caption.textContent = label;
+          wrap.appendChild(caption);
+          return wrap;
+        };
+        const vs = document.createElement('div');
+        vs.className = 'rps-vs';
+        vs.textContent = 'vs';
+        rpsResultEl.appendChild(side(RPS_EMOJI[rpsMyChoice], 'You'));
+        rpsResultEl.appendChild(vs);
+        rpsResultEl.appendChild(side(RPS_EMOJI[rpsOppChoice], oppLabel));
         rpsSetStatus(rpsWinnerText(rpsMyChoice, rpsOppChoice));
       }
 
