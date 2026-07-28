@@ -694,29 +694,50 @@
       let isCalling = false;
       let incomingSignalData = null;
 
-      // Emoji Picker Initialization
-      if (window.picmo) {
-        const picker = picmo.createPicker({
-          rootElement: emojiContainer,
-          theme: 'dark'
-        });
+      // Data URLs inflate the raw bytes by ~33%; keep the encoded payload under
+      // the server's maxHttpBufferSize so oversized files fail loudly here
+      // instead of dropping the socket connection mid-transfer.
+      const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 
-        picker.addEventListener('emoji:select', selection => {
-          messageInput.value += selection.emoji;
-          messageInput.focus();
-        });
-
-        emojiBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          emojiContainer.classList.toggle('active');
-        });
-
-        document.addEventListener('click', (e) => {
-          if (!emojiContainer.contains(e.target) && e.target !== emojiBtn) {
-            emojiContainer.classList.remove('active');
-          }
-        });
+      function reportError(message, err){
+        if(err) console.error(message, err);
+        else console.error(message);
+        alert(err && err.message ? `${message}: ${err.message}` : message);
       }
+
+      // Emoji Picker Initialization
+      let emojiPicker = null;
+      if (window.picmo) {
+        try {
+          emojiPicker = picmo.createPicker({
+            rootElement: emojiContainer,
+            theme: 'dark'
+          });
+          emojiPicker.addEventListener('emoji:select', selection => {
+            messageInput.value += selection.emoji;
+            messageInput.focus();
+          });
+        } catch (err) {
+          console.error('Emoji picker failed to initialize:', err);
+        }
+      } else {
+        console.error('Emoji picker library (picmo) failed to load.');
+      }
+
+      emojiBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(!emojiPicker){
+          reportError('Emoji picker is unavailable — check your network connection and reload.');
+          return;
+        }
+        emojiContainer.classList.toggle('active');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!emojiContainer.contains(e.target) && e.target !== emojiBtn) {
+          emojiContainer.classList.remove('active');
+        }
+      });
 
       function appendMessage({ senderId, fromName, text='', attachment=null, ts=Date.now() }){
         const isMe = (senderId === socket.id);
@@ -757,14 +778,23 @@
         return new Promise((res, rej) => {
           const r = new FileReader();
           r.onload = () => res(r.result);
-          r.onerror = rej;
-          r.readAsDataURL(file);
+          r.onerror = () => rej(r.error || new Error('Could not read the selected file'));
+          r.onabort = () => rej(new Error('Reading the selected file was aborted'));
+          try{
+            r.readAsDataURL(file);
+          }catch(err){
+            rej(err);
+          }
         });
       }
 
       function sendMessage(){
         const txt = (messageInput.value || '').trim();
         if(!txt) return;
+        if(!socket.connected){
+          reportError('Not connected to the chat server — your message was not sent.');
+          return;
+        }
         const payload = { text: txt, ts: Date.now() };
         socket.emit('send_message', payload);
         appendMessage({ senderId: socket.id, text: txt, ts: payload.ts });
@@ -784,11 +814,22 @@
       fileInput.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
         if(!file) return;
-        const data = await readFileAsDataURL(file);
-        const attachment = { name: file.name, type: file.type, data };
-        socket.emit('send_message', { attachment, ts: Date.now() });
-        appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
-        fileInput.value = '';
+        try{
+          if(!socket.connected){
+            throw new Error('Not connected to the chat server');
+          }
+          if(file.size > MAX_ATTACHMENT_BYTES){
+            throw new Error(`File is too large (max ${Math.round(MAX_ATTACHMENT_BYTES / (1024*1024))} MB)`);
+          }
+          const data = await readFileAsDataURL(file);
+          const attachment = { name: file.name, type: file.type, data };
+          socket.emit('send_message', { attachment, ts: Date.now() });
+          appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
+        }catch(err){
+          reportError('Could not send attachment', err);
+        }finally{
+          fileInput.value = '';
+        }
       });
 
       const toggleSnap = async () => {
@@ -798,13 +839,16 @@
         }
         snapArea.style.display = 'flex';
         try{
+          if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+            throw new Error('Camera access is not supported in this browser (requires HTTPS)');
+          }
           const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
           snapVideo.srcObject = s;
-          snapVideo.play();
           snapArea._stream = s;
+          await snapVideo.play();
         }catch(err){
-          alert('Camera error: ' + err.message);
-          snapArea.style.display = 'none';
+          reportError('Camera error', err);
+          closeSnap();
         }
       };
 
@@ -817,18 +861,31 @@
         const h = snapVideo.videoHeight || 480;
         snapCanvas.width = w;
         snapCanvas.height = h;
-        const ctx = snapCanvas.getContext('2d');
-        ctx.drawImage(snapVideo, 0, 0, w, h);
-        snapCanvas.hidden = false;
+        try{
+          const ctx = snapCanvas.getContext('2d');
+          if(!ctx) throw new Error('2D canvas context is unavailable');
+          ctx.drawImage(snapVideo, 0, 0, w, h);
+          snapCanvas.hidden = false;
+        }catch(err){
+          snapCanvas.hidden = true;
+          reportError('Could not capture the snap', err);
+        }
       });
 
       sendSnapBtn.addEventListener('click', () => {
         if(snapCanvas.hidden) return alert('Capture a snap first!');
-        const data = snapCanvas.toDataURL('image/png');
-        const attachment = { name: 'snap.png', type: 'image/png', data };
-        socket.emit('send_message', { attachment, ts: Date.now() });
-        appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
-        closeSnap();
+        try{
+          if(!socket.connected){
+            throw new Error('Not connected to the chat server');
+          }
+          const data = snapCanvas.toDataURL('image/png');
+          const attachment = { name: 'snap.png', type: 'image/png', data };
+          socket.emit('send_message', { attachment, ts: Date.now() });
+          appendMessage({ senderId: socket.id, attachment, ts: Date.now() });
+          closeSnap();
+        }catch(err){
+          reportError('Could not send the snap', err);
+        }
       });
 
       closeSnapBtn.addEventListener('click', closeSnap);
@@ -850,9 +907,30 @@
         statusEl.style.color = '#00ff9d';
       });
 
-      socket.on('disconnect', () => {
+      socket.on('disconnect', (reason) => {
+        console.warn('Disconnected from chat server:', reason);
         statusEl.textContent = 'offline';
         statusEl.style.color = '#ff5b6f';
+      });
+
+      // Without these the connection can fail permanently while the UI still
+      // reads "connecting..." and every send silently goes nowhere.
+      socket.on('connect_error', (err) => {
+        console.error('Chat server connection error:', err);
+        statusEl.textContent = 'connection error';
+        statusEl.style.color = '#ff5b6f';
+      });
+
+      socket.on('error', (err) => {
+        console.error('Socket error:', err);
+      });
+
+      socket.io.on('reconnect_failed', () => {
+        reportError('Lost connection to the chat server and could not reconnect. Please reload the page.');
+      });
+
+      socket.on('server_error', (info) => {
+        reportError(`Server rejected '${info && info.event ? info.event : 'request'}'`, info && info.message ? new Error(info.message) : null);
       });
 
       socket.on('user_count_update', (count) => {
@@ -860,30 +938,51 @@
       });
 
       socket.on('receive_message', (payload) => {
-        appendMessage({
-          senderId: payload.from,
-          fromName: payload.fromName,
-          text: payload.text,
-          attachment: payload.attachment,
-          ts: payload.ts
-        });
+        if(!payload || typeof payload !== 'object'){
+          console.error('Ignoring malformed receive_message payload:', payload);
+          return;
+        }
+        try{
+          appendMessage({
+            senderId: payload.from,
+            fromName: payload.fromName,
+            text: payload.text,
+            attachment: payload.attachment,
+            ts: payload.ts
+          });
+        }catch(err){
+          console.error('Failed to render incoming message:', err, payload);
+        }
       });
 
       startCallBtn.addEventListener('click', async () => {
         if(isCalling) return;
         try{
+          if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+            throw new Error('Camera/mic access is not supported in this browser (requires HTTPS)');
+          }
           localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        }catch(err){
+          reportError('Camera/Mic permission error', err);
+          return;
+        }
+        try{
           localVideoEl.srcObject = localStream;
           callOverlay.classList.remove('hidden');
           document.getElementById('callState').textContent = 'Calling...';
           isCalling = true;
           startPeer(true);
         }catch(err){
-          alert('Camera/Mic permission error: ' + err.message);
+          endCall();
+          reportError('Could not start the call', err);
         }
       });
 
       socket.on('incoming_call', (data) => {
+        if(!data || !data.signal){
+          console.error('Ignoring incoming_call without a signal:', data);
+          return;
+        }
         incomingSignalData = data.signal;
         incoming.classList.remove('hidden');
         document.getElementById('incomingText').textContent = `${data.callerName || 'Peer'} is calling...`;
@@ -892,13 +991,25 @@
       answerBtn.onclick = async () => {
         incoming.classList.add('hidden');
         try{
+          if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+            throw new Error('Camera/mic access is not supported in this browser (requires HTTPS)');
+          }
           localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        }catch(err){
+          socket.emit('decline_call');
+          endCall();
+          reportError('Camera/Mic error', err);
+          return;
+        }
+        try{
           localVideoEl.srcObject = localStream;
           callOverlay.classList.remove('hidden');
           isCalling = true;
           startPeer(false);
         }catch(err){
-          alert('Camera/Mic error: ' + err.message);
+          socket.emit('hangup');
+          endCall();
+          reportError('Could not answer the call', err);
         }
       };
 
@@ -908,10 +1019,19 @@
       };
 
       socket.on('call_accepted', (signal) => {
-        if(peer){
-          peer.signal(signal);
+        if(!peer){
+          console.error('Received call_accepted with no active peer; ignoring signal.');
+          document.getElementById('callState').textContent = 'Call failed';
+          return;
         }
-        document.getElementById('callState').textContent = 'Connected';
+        try{
+          peer.signal(signal);
+          document.getElementById('callState').textContent = 'Connected';
+        }catch(err){
+          document.getElementById('callState').textContent = 'Connection failed';
+          reportError('Could not complete the call handshake', err);
+          endCall();
+        }
       });
 
       socket.on('call_ended', () => endCall());
@@ -928,6 +1048,9 @@
       // the first signal) was being silently dropped, which is why calls
       // would ring but never actually connect.
       function startPeer(initiator){
+        if(typeof SimplePeer === 'undefined'){
+          throw new Error('WebRTC library (simple-peer) failed to load');
+        }
         peer = new SimplePeer({
           initiator: initiator,
           trickle: false,
@@ -943,7 +1066,10 @@
           }
         });
 
-        if(!initiator && incomingSignalData){
+        if(!initiator){
+          if(!incomingSignalData){
+            throw new Error('Missing caller signal \u2014 the call offer was lost');
+          }
           peer.signal(incomingSignalData);
         }
 
@@ -989,7 +1115,7 @@
       // doesn't accidentally reuse an old/expired signal.
       function endCall(){
         if(peer){
-          try{ peer.destroy(); }catch(e){}
+          try{ peer.destroy(); }catch(err){ console.error('Failed to destroy peer connection:', err); }
           peer = null;
         }
         if(localStream){
@@ -1056,14 +1182,26 @@
       // Mirrors the existing send_message -> receive_message pattern.
       // server.js relays these via: socket.on('send_game', d => socket.to('chat-room').emit('receive_game', d));
       function sendGame(type, data){
+        if(!socket.connected){
+          reportError('Not connected to the chat server \u2014 your friend will not see this move.');
+          return;
+        }
         socket.emit('send_game', { type, data, ts: Date.now() });
       }
       socket.on('receive_game', (payload) => {
-        if(!payload) return;
-        if(payload.type === 'ttt_move') tttOnRemoteMove(payload.data);
-        else if(payload.type === 'ttt_reset') tttOnRemoteReset();
-        else if(payload.type === 'rps_choice') rpsOnRemoteChoice(payload.data);
-        else if(payload.type === 'rps_reset') rpsOnRemoteReset();
+        if(!payload || typeof payload.type !== 'string'){
+          console.error('Ignoring malformed receive_game payload:', payload);
+          return;
+        }
+        try{
+          if(payload.type === 'ttt_move') tttOnRemoteMove(payload.data);
+          else if(payload.type === 'ttt_reset') tttOnRemoteReset();
+          else if(payload.type === 'rps_choice') rpsOnRemoteChoice(payload.data);
+          else if(payload.type === 'rps_reset') rpsOnRemoteReset();
+          else console.error('Unknown game event type:', payload.type);
+        }catch(err){
+          console.error(`Failed to apply game event '${payload.type}':`, err, payload);
+        }
       });
 
       /* ---------- Tic Tac Toe (2-player only) ---------- */
@@ -1121,6 +1259,10 @@
       }
 
       function tttOnRemoteMove(data){
+        if(!data || !Number.isInteger(data.i) || data.i < 0 || data.i > 8 || (data.mark !== 'X' && data.mark !== 'O')){
+          throw new Error(`Invalid tic-tac-toe move: ${JSON.stringify(data)}`);
+        }
+        if(!tttBoard) tttOnRemoteReset();
         tttBoard[data.i] = data.mark;
         tttRender();
         const w = tttWinner(tttBoard);
@@ -1178,6 +1320,9 @@
       }
 
       function rpsOnRemoteChoice(data){
+        if(!data || !RPS_EMOJI[data.choice]){
+          throw new Error(`Invalid rock-paper-scissors choice: ${JSON.stringify(data)}`);
+        }
         rpsOppChoice = data.choice;
         rpsMaybeReveal();
       }
