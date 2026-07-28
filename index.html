@@ -217,16 +217,124 @@
     /* Overlays */
     .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 60; background: rgba(0,0,0,0.85); }
     .overlay.hidden { display: none !important; }
-    .call-card { width: 92%; max-width: 700px; padding: 16px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .call-videos { position: relative; width: 100%; height: 320px; background: #000; border-radius: 12px; overflow: hidden; }
-    .call-videos video { width: 100%; height: 100%; object-fit: cover; }
-    .call-videos .local { position: absolute; right: 10px; bottom: 10px; width: 100px; height: 130px; border-radius: 8px; border: 2px solid var(--neon); background: #111; z-index: 2; }
-    .call-actions { display: flex; gap: 10px; margin-top: 6px; }
-    .ctrl { width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); color: var(--text); cursor: pointer; font-size: 18px; }
-    .ctrl.danger { background: #ff5b6f; color: #fff; }
 
-    .incoming-card { padding: 20px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; gap: 12px; }
-    .incoming-actions { display: flex; gap: 10px; justify-content: center; }
+    /* Full-screen WhatsApp-style call screen */
+    #callOverlay {
+      background: #000;
+      padding: 0;
+    }
+    .call-card {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      padding: 0;
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      background: radial-gradient(1200px 800px at 50% 0%, rgba(0,255,157,0.05), transparent 60%), #05070a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Remote video fills the entire screen (like WhatsApp) */
+    .call-videos {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      border-radius: 0;
+      overflow: hidden;
+    }
+    .call-videos video { width: 100%; height: 100%; object-fit: cover; }
+    #remoteVideo:not([src]), #remoteVideo.no-stream { opacity: 0; }
+
+    /* Small local preview, WhatsApp-style, top-right */
+    .call-videos .local {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      bottom: auto;
+      width: 96px;
+      height: 140px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.25);
+      background: #111;
+      z-index: 3;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    }
+
+    /* Top header: avatar + name + status, overlaid on the video */
+    .call-header {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 48px 16px 20px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.0));
+      text-align: center;
+    }
+    .call-header .avatar.large {
+      width: 96px; height: 96px; font-size: 30px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.2));
+    }
+    #callName { font-size: 20px; }
+    #callState { font-size: 14px; margin-top: 2px; }
+
+    /* Bottom control bar, fixed like WhatsApp */
+    .call-actions {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      z-index: 3;
+      display: flex;
+      gap: 22px;
+      justify-content: center;
+      align-items: center;
+      padding: 22px 16px calc(24px + env(safe-area-inset-bottom));
+      background: linear-gradient(0deg, rgba(0,0,0,0.6), rgba(0,0,0,0.0));
+    }
+    .ctrl {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 22px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ctrl.active { background: rgba(255,255,255,0.3); }
+    .ctrl.danger { background: #ff3040; color: #fff; }
+
+    @media (max-width: 480px) {
+      .call-videos .local { width: 78px; height: 112px; right: 10px; top: 10px; }
+      .call-header { padding-top: 40px; }
+      .ctrl { width: 52px; height: 52px; font-size: 20px; }
+      .call-actions { gap: 16px; }
+    }
+
+    #incoming { background: linear-gradient(180deg, #0b1220, #04060a); }
+    .incoming-card {
+      width: 100%; height: 100%;
+      padding: 60px 20px calc(40px + env(safe-area-inset-bottom));
+      border-radius: 0;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .incoming-caller { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .incoming-caller .avatar.large { width: 110px; height: 110px; font-size: 34px; }
+    .incoming-actions { display: flex; gap: 40px; justify-content: center; width: 100%; }
+    .incoming-actions .ctrl { width: 62px; height: 62px; font-size: 24px; }
+    .incoming-actions .label { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .incoming-btn-wrap { display: flex; flex-direction: column; align-items: center; }
 
     /* Mobile Specific Layout Fixes */
     @media (max-width: 768px) {
@@ -320,8 +428,13 @@
     </main>
 
     <div id="callOverlay" class="overlay hidden">
-      <div class="call-card glass">
-        <div style="display:flex; gap:10px; align-items:center; width:100%;">
+      <div class="call-card">
+        <div class="call-videos">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <video id="localVideo" class="local" autoplay muted playsinline></video>
+        </div>
+
+        <div class="call-header">
           <div id="callAvatar" class="avatar large">C</div>
           <div>
             <div id="callName" class="name">Peer</div>
@@ -329,25 +442,29 @@
           </div>
         </div>
 
-        <div class="call-videos">
-          <video id="remoteVideo" autoplay playsinline></video>
-          <video id="localVideo" class="local" autoplay muted playsinline></video>
-        </div>
-
         <div class="call-actions">
-          <button id="muteBtn" class="ctrl">🎙️</button>
-          <button id="cameraToggleBtn" class="ctrl">📷</button>
-          <button id="hangupBtn" class="ctrl danger">🛑</button>
+          <button id="muteBtn" class="ctrl" title="Mute">🎙️</button>
+          <button id="cameraToggleBtn" class="ctrl" title="Camera">📷</button>
+          <button id="hangupBtn" class="ctrl danger" title="Hang up">🛑</button>
         </div>
       </div>
     </div>
 
     <div id="incoming" class="overlay hidden">
-      <div class="incoming-card glass">
-        <div id="incomingText" style="font-size: 16px; font-weight: 600;">Incoming call...</div>
+      <div class="incoming-card">
+        <div class="incoming-caller">
+          <div class="avatar large">C</div>
+          <div id="incomingText" style="font-size: 18px; font-weight: 600;">Incoming call...</div>
+        </div>
         <div class="incoming-actions">
-          <button id="answerBtn" class="btn neon">Answer</button>
-          <button id="declineBtn" class="btn danger">Decline</button>
+          <div class="incoming-btn-wrap">
+            <button id="declineBtn" class="ctrl danger" title="Decline">📞</button>
+            <div class="label">Decline</div>
+          </div>
+          <div class="incoming-btn-wrap">
+            <button id="answerBtn" class="ctrl" style="background: linear-gradient(90deg,var(--neon),var(--cyan)); color:#001018;" title="Answer">📞</button>
+            <div class="label">Answer</div>
+          </div>
         </div>
       </div>
     </div>
