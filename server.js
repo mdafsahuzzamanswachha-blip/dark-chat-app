@@ -5,9 +5,7 @@ const cors = require('cors');
 
 const app = express();
 
-// Comma separated list of allowed browser origins, e.g.
-// ALLOWED_ORIGINS="https://dark-chat.example.com,http://localhost:5500"
-// Falls back to local development origins when unset.
+// Comma separated list of allowed browser origins
 const DEFAULT_ORIGINS = ['http://localhost:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'];
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
@@ -16,9 +14,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 const originAllowlist = allowedOrigins.length ? allowedOrigins : DEFAULT_ORIGINS;
 
 function originChecker(origin, callback) {
-    // Non-browser clients (curl, health checks) send no Origin header.
     if (!origin || originAllowlist.includes(origin)) return callback(null, true);
-    // Reject by omitting CORS headers rather than throwing, so no stack trace leaks.
     return callback(null, false);
 }
 
@@ -30,23 +26,17 @@ app.disable('x-powered-by');
 app.get('/', (req, res) => {
     res.send('Instant Chat Server is Running perfectly!');
 });
-// Express error handler: without this Express swallows handler errors into a
-// bare 500 with no log.
+
 app.use((err, req, res, next) => {
     console.error(`Request failed: ${req.method} ${req.originalUrl}`, err);
     if (res.headersSent) return next(err);
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// Optional shared access token. When set, clients must connect with
-// io(url, { auth: { token: '...' } }) using the same value.
 const ACCESS_TOKEN = process.env.CHAT_ACCESS_TOKEN || '';
 const ROOM = 'chat-room';
 const MAX_TEXT_LENGTH = 4000;
 const MAX_NAME_LENGTH = 40;
-// Attachments are sent as data URLs inside the message payload; anything above
-// this limit is rejected with an explicit error instead of Socket.IO silently
-// killing the connection.
 const MAX_ATTACHMENT_BYTES = 11 * 1024 * 1024;
 const MAX_PAYLOAD_BYTES = 12 * 1024 * 1024;
 const MAX_SIGNAL_BYTES = 128 * 1024;
@@ -77,7 +67,6 @@ io.use((socket, next) => {
 
 function sanitizeText(value, maxLength) {
     if (typeof value !== 'string') return '';
-    // Strip control characters that can be used to spoof rendered output.
     return value.replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, maxLength);
 }
 
@@ -93,8 +82,6 @@ function sanitizeAttachment(attachment) {
     if (typeof data !== 'string') {
         throw new Error('attachment data must be a data URL string');
     }
-    // Only inline base64 data URLs matching the declared type are relayed; this
-    // blocks javascript:/data:text/html payloads from reaching the peer's DOM.
     const expectedPrefix = `data:${type};base64,`;
     if (!data.startsWith(expectedPrefix) || !/^[A-Za-z0-9+/]+={0,2}$/.test(data.slice(expectedPrefix.length))) {
         throw new Error(`attachment data must be a base64 ${type} data URL`);
@@ -121,8 +108,6 @@ function assertSignalSize(signal) {
 
 let onlineUsers = 0;
 
-// Wraps a socket handler so a throwing/rejecting handler is logged and reported
-// back to the sender instead of being swallowed by Socket.IO.
 function onSocket(socket, event, handler) {
     socket.on(event, async (...args) => {
         try {
@@ -136,7 +121,7 @@ function onSocket(socket, event, handler) {
 
 io.on('connection', (socket) => {
     onlineUsers++;
-    console.log(`User Connected (Total: ${onlineUsers})`);
+    console.log(`User Connected: ${socket.id} (Total: ${onlineUsers})`);
 
     let eventCount = 0;
     let windowStart = Date.now();
@@ -153,19 +138,9 @@ io.on('connection', (socket) => {
         }
     }
 
-    // ১v১ চ্যাটের জন্য সবাইকে ফিক্সড 'chat-room'-এ জয়েন করানো হচ্ছে
     socket.join(ROOM);
-
-    io.on('connection', (socket) => {
-        onlineUsers++;
-        console.log(`User Connected: ${socket.id} (Total: ${onlineUsers})`);
-        
-        socket.join(ROOM);
-
-    // ইউজার কাউন্ট পাঠানো
     io.to(ROOM).emit('user_count_update', onlineUsers);
 
-    // মেসেজ পাওয়ার পর রুমের অন্য সবাইকে পাঠানো
     onSocket(socket, 'send_message', (data) => {
         assertNotRateLimited();
         if (!data || typeof data !== 'object') {
@@ -184,13 +159,11 @@ io.on('connection', (socket) => {
         socket.to(ROOM).emit('receive_message', envelope);
     });
 
-    // টাইপিং স্ট্যাটাস
     onSocket(socket, 'typing', (isTyping) => {
         assertNotRateLimited();
         socket.to(ROOM).emit('user_typing', Boolean(isTyping));
     });
 
-    // ভিডিও কল সিগন্যালিং
     onSocket(socket, 'call_user', (data) => {
         assertNotRateLimited();
         if (!data || !data.signal) {
@@ -223,8 +196,6 @@ io.on('connection', (socket) => {
         io.to(ROOM).emit('call_ended');
     });
 
-    // মাল্টিপ্লেয়ার গেম মুভ রিলে (Tic-Tac-Toe, Rock Paper Scissors)
-    // ক্লায়েন্ট 'send_game' পাঠালে রুমের অন্যজনকে 'receive_game' হিসেবে পাঠানো হয়
     onSocket(socket, 'send_game', (data) => {
         assertNotRateLimited();
         if (!data || !GAME_EVENT_TYPES.includes(data.type)) {
@@ -242,6 +213,11 @@ io.on('connection', (socket) => {
         console.log(`User Disconnected (${reason}) (Total: ${onlineUsers})`);
         io.to(ROOM).emit('user_count_update', onlineUsers);
     });
-}
+});
 
-module.exports = { ROOM, createApp, buildEnvelope, registerSocketHandlers, createChatServer };
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+module.exports = { ROOM, server, app };
