@@ -156,9 +156,11 @@ io.on('connection', (socket) => {
     // ১v১ চ্যাটের জন্য সবাইকে ফিক্সড 'chat-room'-এ জয়েন করানো হচ্ছে
     socket.join(ROOM);
 
-    socket.on('error', (err) => {
-        console.error(`Socket error (${socket.id}):`, err);
-    });
+    io.on('connection', (socket) => {
+        onlineUsers++;
+        console.log(`User Connected: ${socket.id} (Total: ${onlineUsers})`);
+        
+        socket.join(ROOM);
 
     // ইউজার কাউন্ট পাঠানো
     io.to(ROOM).emit('user_count_update', onlineUsers);
@@ -240,27 +242,6 @@ io.on('connection', (socket) => {
         console.log(`User Disconnected (${reason}) (Total: ${onlineUsers})`);
         io.to(ROOM).emit('user_count_update', onlineUsers);
     });
-});
+}
 
-// Rejected handshakes (bad origin, oversized payload, transport errors) are
-// otherwise invisible on the server side.
-io.engine.on('connection_error', (err) => {
-    console.error(`Socket.IO connection error (${err.code}): ${err.message}`);
-});
-
-const PORT = process.env.PORT || 3000;
-server.on('error', (err) => {
-    console.error(`HTTP server error on port ${PORT}:`, err);
-    process.exit(1);
-});
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
-process.on('unhandledRejection', (reason) => {
-    console.error('Unhandled promise rejection:', reason);
-});
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught exception, shutting down:', err);
-    server.close(() => process.exit(1));
-});
+module.exports = { ROOM, createApp, buildEnvelope, registerSocketHandlers, createChatServer };
